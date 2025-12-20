@@ -6,21 +6,6 @@
   <title>Ryan’s Workshop</title>
   <link rel="stylesheet" href="/assets/site.css">
   <style>
-    :root { font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif; }
-
-    body {
-      margin: 18px;
-      background: #f3efe6; /* warm sepia */
-    }
-
-    .wrap {
-      max-width: 980px;
-      display: grid;
-      gap: 14px;
-      margin: 0 auto;
-      justify-items: center;
-    }
-
     h1 { margin: 0 0 4px 0; font-size: 28px; text-align: center; }
     .subtitle { margin: 0 0 8px 0; opacity: .85; text-align: center; }
 
@@ -31,13 +16,8 @@
       gap: 12px;
     }
 
-    .card {
-      background: #fff;
-      border: 1px solid rgba(0,0,0,0.08);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-      border-radius: 12px;
-      padding: 14px;
-      box-sizing: border-box;
+    /* Use shared .card from site.css; this just adds homepage-specific behavior */
+    .toolCard {
       text-decoration: none;
       color: inherit;
       display: grid;
@@ -45,8 +25,8 @@
       cursor: pointer;
     }
 
-    .card:active { transform: translateY(1px); }
-    .card:hover { outline: 2px solid rgba(0,0,0,0.06); }
+    .toolCard:active { transform: translateY(1px); }
+    .toolCard:hover { outline: 2px solid rgba(0,0,0,0.06); }
 
     .cardTitle {
       font-size: 16px;
@@ -99,26 +79,34 @@
       margin-top: 6px;
     }
 
+    /* Placeholder should not behave like a link */
+    .disabled {
+      cursor: default;
+      opacity: 0.85;
+    }
+    .disabled:hover { outline: none; }
+    .disabled:active { transform: none; }
+
     /* Phones: stack cards */
     @media (max-width: 720px) {
-      body { margin: 14px; }
       h1 { font-size: 24px; }
       .tools { grid-template-columns: 1fr; }
+      .hint { font-size: 12px; line-height: 1.25; }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .card:active { transform: none; }
+      .toolCard:active { transform: none; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Ryan’s Workshop </h1>
+    <h1>Ryan’s Workshop</h1>
     <p class="subtitle">Harmless Tools, Toys, and Other Questionable Inventions</p>
 
     <div class="tools">
       <!-- Tool #1 (Cat Combinator) -->
-      <a class="card" href="/tools/cat-mixer/" aria-label="Open Impawsible Cat Combinator">
+      <a class="card toolCard" href="/tools/cat-mixer/" aria-label="Open Impawsible Cat Combinator">
         <div class="cardTitle">
           <span>Impawsible Cat Combinator</span>
           <span class="pill">meow</span>
@@ -128,18 +116,18 @@
       </a>
 
       <!-- Tool #2 (placeholder) -->
-      <a class="card" href="#" aria-label="Coming soon">
+      <div class="card toolCard disabled" role="note" aria-label="Coming soon">
         <div class="cardTitle">
           <span>Coming soon</span>
           <span class="pill">idk</span>
         </div>
         <p class="desc">Make something weird. Make something useful. Preferably make both.</p>
-        <p class="url">/tools/meh/</p>
-      </a>
+        <p class="url">/tools/next-tool/</p>
+      </div>
     </div>
 
     <div class="hint">
-      Everything here runs in your browser.<br/> 
+      Everything here runs in your browser.<br/>
       No accounts. No tracking (by me at least).<br/>
       No cats were harmed.<br/>
       If a tool breaks, it’s probably a feature.
@@ -147,5 +135,3 @@
   </div>
 </body>
 </html>
-
-
