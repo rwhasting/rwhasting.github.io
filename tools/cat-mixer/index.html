@@ -19,7 +19,6 @@
       gap: 14px;
       margin: 0 auto;
       justify-items: center;
-      <a href="/" class="homeLink">← Home</a>
     }
       .homeLink {
   align-self: flex-start;
@@ -173,32 +172,79 @@
 }
 
 
+/* =========================
+   Mobile-friendly tweaks
+   ========================= */
 
-    /* =========================
-       Mobile-friendly tweaks
-       ========================= */
+/* Phones: stack the 3 reels vertically, but more compact */
+@media (max-width: 720px) {
+  body { margin: 10px; }
 
-    /* Phones: stack the 3 reels vertically */
-    @media (max-width: 720px) {
-      body { margin: 14px; }
-      h1 { font-size: 24px; }
+  .wrap { gap: 10px; }
 
-      .reels { grid-template-columns: 1fr; }
-      .reel { max-width: 520px; } /* keeps things readable */
-      .window { height: 84px; }
-      .window pre { font-size: 18px; }
-      .preview pre { font-size: 20px; }
-    }
+  h1 {
+    font-size: 20px;
+    margin: 0 0 4px 0;
+  }
 
-    /* Touch devices: keyboard hints aren’t useful */
-    @media (hover: none) and (pointer: coarse) {
-      .kbdHint { display: none; }
-    }
+  .controls { gap: 8px; }
 
-    /* Optional: reduce motion on iOS/Android accessibility settings */
-    @media (prefers-reduced-motion: reduce) {
-      button:active { transform: none; }
-    }
+  button {
+    padding: 8px 10px;
+    font-size: 15px;
+    min-height: 40px;
+  }
+
+  .reels {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .reel {
+    max-width: 520px;
+    padding: 8px;
+  }
+
+  .reel h3 {
+    margin: 0 0 6px 0;
+    font-size: 13px;
+  }
+
+  .window { height: 64px; }
+
+  .window pre {
+    font-size: 16px;
+    padding: 4px;
+  }
+
+  .btnRow {
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .btnRow button {
+    min-height: 38px;
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+
+  .preview { padding: 10px; }
+
+  .preview pre { font-size: 18px; }
+
+  .hint { font-size: 12px; }
+}
+
+/* Touch devices: keyboard hints aren’t useful */
+@media (hover: none) and (pointer: coarse) {
+  .kbdHint { display: none; }
+}
+
+/* Optional: reduce motion on iOS/Android accessibility settings */
+@media (prefers-reduced-motion: reduce) {
+  button:active { transform: none; }
+}
+
   </style>
 </head>
 <body>
