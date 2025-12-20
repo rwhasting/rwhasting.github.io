@@ -63,17 +63,14 @@
     width: 100%;
   }
 
-.window pre {
-  margin: 0;
-  font-size: 18px;
-  line-height: 1.25;
-  padding: 6px;
-  white-space: pre;
-
-  /* key changes */
-  text-align: left;      /* stop centering glyphs */
-  display: inline-block; /* allow fixed ch width to apply */
-}
+  .window pre {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.25;
+    padding: 6px;
+    white-space: pre;
+    text-align: center;
+  }
 
   .btnRow {
     display: grid;
@@ -136,6 +133,28 @@
   .historyCard {
     padding: 12px;
     width: 100%;
+  }
+
+  /* =========================
+     Mobile copy fallback
+     ========================= */
+
+  /* Must NOT be display:none, but keep it invisible/offscreen */
+  .mobileCopy {
+    position: fixed;
+    left: -9999px;
+    top: 0;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .copyStatus {
+    font-size: 12px;
+    opacity: 0.75;
+    text-align: center;
+    min-height: 1.2em; /* prevents layout jump */
   }
 
   /* =========================
@@ -222,7 +241,7 @@
     <div class="controls">
       <button id="random">Randomize<span class="kbdHint"> (R)</span></button>
       <button id="toggleHistory">History<span class="kbdHint"> (H)</span></button>
-      <button id="copy">Copy<span class="kbdHint"> (C)</span></button>
+      <button id="copy">Copy emoticon<span class="kbdHint"> (C)</span></button>
     </div>
 
     <div class="reels">
@@ -263,6 +282,10 @@
     <div class="preview card">
       <pre id="output"></pre>
     </div>
+
+    <!-- Mobile copy fallback: must NOT be display:none -->
+    <textarea id="mobileCopy" class="mobileCopy" readonly aria-hidden="true"></textarea>
+    <div id="copyStatus" class="copyStatus" aria-live="polite"></div>
 
     <div id="historyPanel" style="display:none; width:100%;">
       <div class="historyCard card">
@@ -363,23 +386,25 @@
       idx[2] = state[2];
     }
 
-// Use non-breaking space for padding so mobile apps are less likely to trim/collapse alignment spaces
-const PAD = "\u00A0";
+    // Use non-breaking space for on-page padding so alignment survives more environments
+    const PAD = "\u00A0";
 
-function padToWidth(s, w) {
-  if (s.length >= w) return s;
-  const left = Math.floor((w - s.length) / 2);
-  const right = w - s.length - left;
-  return PAD.repeat(left) + s + PAD.repeat(right);
-}
+    function padToWidth(s, w) {
+      if (s.length >= w) return s;
+      const left = Math.floor((w - s.length) / 2);
+      const right = w - s.length - left;
+      return PAD.repeat(left) + s + PAD.repeat(right);
+    }
 
-function rpadToWidth(s, w) {
-  if (s.length >= w) return s;
-  return s + PAD.repeat(w - s.length);
-}
+    function rpadToWidth(s, w) {
+      if (s.length >= w) return s;
+      return s + PAD.repeat(w - s.length);
+    }
+
+    // Convert NBSP back to normal spaces ONLY when copying (better for compatibility)
     function toNormalSpaces(s) {
-  return s.replace(/\u00A0/g, " ");
-}
+      return s.replace(/\u00A0/g, " ");
+    }
 
     function stateToCat(state) {
       const rawLines = [
@@ -432,15 +457,10 @@ function rpadToWidth(s, w) {
     }
 
     function render() {
-    for (let r = 0; r < 3; r++) {
-  const w = Math.max(...reels[r].map(x => x.length));
-
-  // Make the reel "viewport" a stable fixed-width box
-  show[r].style.width = w + "ch";
-
-  // Center-pad within that fixed box (no jitter)
-  show[r].textContent = padToWidth(reels[r][idx[r]], w);
-}
+      for (let r = 0; r < 3; r++) {
+        const w = Math.max(...reels[r].map(x => x.length));
+        show[r].textContent = rpadToWidth(reels[r][idx[r]], w);
+      }
 
       const rawLines = [
         reels[0][idx[0]],
@@ -471,15 +491,57 @@ function rpadToWidth(s, w) {
       render();
     }
 
-async function copyNow() {
-  const text = toNormalSpaces(out.textContent); // convert NBSP → normal spaces
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch {
-    window.prompt("Copy the emoticon:", text);
-  }
-}
+    /* =========================
+       Mobile copy fallback
+       ========================= */
 
+    function isProbablyMobile() {
+      return (
+        window.matchMedia?.("(hover: none) and (pointer: coarse)").matches ||
+        /android|iphone|ipad|ipod/i.test(navigator.userAgent)
+      );
+    }
+
+    function setCopyStatus(msg) {
+      const el = document.getElementById("copyStatus");
+      if (!el) return;
+      el.textContent = msg;
+      if (msg) setTimeout(() => { el.textContent = ""; }, 2200);
+    }
+
+    function selectForManualCopy(text) {
+      const ta = document.getElementById("mobileCopy");
+      if (!ta) return;
+
+      ta.value = text;
+
+      // iOS likes focus + explicit selection range
+      ta.focus({ preventScroll: true });
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+
+      setCopyStatus("Selected — tap Copy (or long-press → Copy).");
+    }
+
+    async function copyNow() {
+      // Convert NBSP to normal spaces for clipboard compatibility
+      const text = toNormalSpaces(out.textContent);
+
+      // On mobile, prefer manual selection (more reliable across iOS/Android apps)
+      if (isProbablyMobile()) {
+        selectForManualCopy(text);
+        return;
+      }
+
+      // Desktop attempt
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopyStatus("Copied!");
+      } catch {
+        // If clipboard API fails, fall back to manual selection
+        selectForManualCopy(text);
+      }
+    }
 
     // Buttons (Prev/Next)
     document.querySelectorAll("button[data-reel]").forEach(btn => {
