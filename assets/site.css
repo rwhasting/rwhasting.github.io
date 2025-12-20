@@ -1,10 +1,16 @@
-:root { font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif; }
+:root {
+  font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+/* A slightly nicer baseline */
+* { box-sizing: border-box; }
 
 body {
   margin: 18px;
   background: #f3efe6; /* warm, easy-on-the-eyes sepia */
 }
 
+/* Common centered page container */
 .wrap {
   max-width: 980px;
   display: grid;
@@ -13,7 +19,12 @@ body {
   justify-items: center;
 }
 
-h1 { margin: 0 0 10px 0; font-size: 28px; text-align: center; }
+/* Default headings (pages can override locally) */
+h1 {
+  margin: 0 0 10px 0;
+  font-size: 28px;
+  text-align: center;
+}
 
 /* Back-to-home link (you still add the <a> in each page’s HTML) */
 .homeLink {
@@ -32,12 +43,17 @@ h1 { margin: 0 0 10px 0; font-size: 28px; text-align: center; }
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.04);
   padding: 12px;
-  box-sizing: border-box;
+}
+
+/* Helpful baseline for code-ish text blocks across tools */
+pre, code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 /* Mobile-friendly tweaks */
 @media (max-width: 720px) {
-  body { margin: 14px; }
+  body { margin: 10px; }  /* closer to your newer compact layout */
+  .wrap { gap: 10px; }
   h1 { font-size: 24px; }
 }
 
