@@ -12,7 +12,6 @@
       background: #f3efe6; /* warm, easy-on-the-eyes sepia */
     }
 
-
     .wrap {
       max-width: 980px;
       display: grid;
@@ -20,17 +19,15 @@
       margin: 0 auto;
       justify-items: center;
     }
-      .homeLink {
-  align-self: flex-start;
-  text-decoration: none;
-  font-size: 14px;
-  opacity: 0.85;
-  margin-bottom: 4px;
-}
-.homeLink:hover {
-  text-decoration: underline;
-}
 
+    .homeLink {
+      align-self: flex-start;
+      text-decoration: none;
+      font-size: 14px;
+      opacity: 0.85;
+      margin-bottom: 4px;
+    }
+    .homeLink:hover { text-decoration: underline; }
 
     h1 { margin: 0 0 10px 0; font-size: 28px; text-align: center; }
 
@@ -78,13 +75,15 @@
       text-align: center;
     }
 
+    /* ✅ No-clipping window: baseline height, but expands if future glyphs are taller */
     .window {
-      height: 92px;
+      min-height: 92px;
+      height: auto;
       border-radius: 10px;
       background: #f7f7f7;
       display: grid;
       place-items: center;
-      overflow: hidden;
+      overflow: visible; /* was hidden */
       user-select: none;
       width: 100%;
       box-sizing: border-box;
@@ -138,125 +137,119 @@
     }
     .kbdHint { display: inline; }
 
+    /* Soft card styling */
+    .reel,
+    .preview {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
 
-/* Soft card styling */
-.reel,
-.preview {
-  background: #fff;
-  border: 1px solid rgba(0,0,0,0.08);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-}
+    /* History panel uses page sepia */
+    #historyPanel > div {
+      background: #f3efe6; /* same sepia as page */
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
 
-/* History panel uses page sepia */
-#historyPanel > div {
-  background: #f3efe6; /* same sepia as page */
-  border: 1px solid rgba(0,0,0,0.08);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-}
+    /* History panel full background */
+    #historyPanel {
+      background: #f3efe6;
+      width: 100%;
+      padding: 10px 0;
+    }
 
-/* History panel full background */
-#historyPanel {
-  background: #f3efe6;
-  width: 100%;
-  padding: 10px 0;
-}
+    .historyCard {
+      border-radius: 12px;
+      padding: 12px;
+      width: 100%;
+      box-sizing: border-box;
+      background: #f3efe6;
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
 
-.historyCard {
-  border-radius: 12px;
-  padding: 12px;
-  width: 100%;
-  box-sizing: border-box;
-  background: #f3efe6;
-  border: 1px solid rgba(0,0,0,0.08);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-}
+    /* =========================
+       Mobile-friendly tweaks
+       ========================= */
 
+    /* Phones: stack the 3 reels vertically, but more compact */
+    @media (max-width: 720px) {
+      body { margin: 10px; }
 
-/* =========================
-   Mobile-friendly tweaks
-   ========================= */
+      .wrap { gap: 10px; }
 
-/* Phones: stack the 3 reels vertically, but more compact */
-@media (max-width: 720px) {
-  body { margin: 10px; }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 4px 0;
+      }
 
-  .wrap { gap: 10px; }
+      .controls { gap: 8px; }
 
-  h1 {
-    font-size: 20px;
-    margin: 0 0 4px 0;
-  }
+      button {
+        padding: 8px 10px;
+        font-size: 15px;
+        min-height: 40px;
+      }
 
-  .controls { gap: 8px; }
+      .reels {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
 
-  button {
-    padding: 8px 10px;
-    font-size: 15px;
-    min-height: 40px;
-  }
+      .reel {
+        max-width: 520px;
+        padding: 8px;
+      }
 
-  .reels {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
+      .reel h3 {
+        margin: 0 0 6px 0;
+        font-size: 13px;
+      }
 
-  .reel {
-    max-width: 520px;
-    padding: 8px;
-  }
+      /* ✅ Mobile baseline stays compact, but can grow if needed (no clipping) */
+      .window { min-height: 70px; }
 
-  .reel h3 {
-    margin: 0 0 6px 0;
-    font-size: 13px;
-  }
+      .window pre {
+        font-size: 16px;
+        padding: 3px;
+        line-height: 1.2;
+      }
 
-  .window { height: 70px; }
+      .btnRow {
+        gap: 8px;
+        margin-top: 8px;
+      }
 
-  .window pre {
-    font-size: 16px;
-    padding: 3px;
-    line-height: 1.2;
-  }
+      .btnRow button {
+        min-height: 38px;
+        padding: 8px 10px;
+        font-size: 14px;
+      }
 
-  .btnRow {
-    gap: 8px;
-    margin-top: 8px;
-  }
+      /* Final mobile squeeze (kept inside mobile) */
+      .preview { padding: 8px; }
+      .preview pre { font-size: 18px; }
 
-  .btnRow button {
-    min-height: 38px;
-    padding: 8px 10px;
-    font-size: 14px;
-  }
+      .hint {
+        font-size: 11px;
+        line-height: 1.25;
+        margin-top: 4px;
+      }
+    }
 
-  .preview { padding: 10px; }
+    /* Touch devices: keyboard hints aren’t useful */
+    @media (hover: none) and (pointer: coarse) {
+      .kbdHint { display: none; }
+    }
 
-  .preview pre { font-size: 18px; }
-
-  .hint { font-size: 12px; }
-}
-
-/* Touch devices: keyboard hints aren’t useful */
-@media (hover: none) and (pointer: coarse) {
-  .kbdHint { display: none; }
-}
-
-/* Optional: reduce motion on iOS/Android accessibility settings */
-@media (prefers-reduced-motion: reduce) {
-  button:active { transform: none; }
-}
-    /* Final mobile squeeze */
-.preview { padding: 8px; }
-
-.hint {
-  font-size: 11px;
-  line-height: 1.25;
-  margin-top: 4px;
-}
-
-
+    /* Optional: reduce motion on iOS/Android accessibility settings */
+    @media (prefers-reduced-motion: reduce) {
+      button:active { transform: none; }
+    }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <a href="/" class="homeLink">← Home</a>
@@ -308,7 +301,7 @@
     </div>
 
     <div id="historyPanel" style="display:none; width:100%;">
-<div class="historyCard">
+      <div class="historyCard">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
           <div style="font-weight:600;">History</div>
           <div style="opacity:.75; font-size:13px;">Tap an entry to jump • Newest first</div>
@@ -406,17 +399,21 @@
       idx[2] = state[2];
     }
 
-    function padToWidth(s, w) {
-      if (s.length >= w) return s;
-      const left = Math.floor((w - s.length) / 2);
-      const right = w - s.length - left;
-      return " ".repeat(left) + s + " ".repeat(right);
-    }
+// Use non-breaking space for padding so mobile apps are less likely to trim/collapse alignment spaces
+const PAD = "\u00A0";
 
-    function rpadToWidth(s, w) {
-      if (s.length >= w) return s;
-      return s + " ".repeat(w - s.length);
-    }
+function padToWidth(s, w) {
+  if (s.length >= w) return s;
+  const left = Math.floor((w - s.length) / 2);
+  const right = w - s.length - left;
+  return PAD.repeat(left) + s + PAD.repeat(right);
+}
+
+function rpadToWidth(s, w) {
+  if (s.length >= w) return s;
+  return s + PAD.repeat(w - s.length);
+}
+
 
     function stateToCat(state) {
       const rawLines = [
