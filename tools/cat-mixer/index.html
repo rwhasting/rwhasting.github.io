@@ -6,248 +6,209 @@
   <title>Ryan's Impawsible Cat Combinator</title>
   <link rel="stylesheet" href="/assets/site.css">
   <style>
-    :root { font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif; }
-    body {
-      margin: 18px;
-      background: #f3efe6; /* warm, easy-on-the-eyes sepia */
+  /* Tool-specific layout */
+  h1 { margin: 0 0 10px 0; } /* keep your preferred spacing */
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+  }
+
+  button {
+    padding: 10px 14px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 12px;
+    font-size: 16px;
+    line-height: 1;
+    min-height: 44px; /* good tap target */
+  }
+  button:active { transform: translateY(1px); }
+
+  .reels {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    justify-items: center;
+    width: 100%;
+  }
+
+  /* Use the shared .card styling, but keep reel-specific sizing */
+  .reel {
+    padding: 10px;         /* overrides .card padding (12px) slightly */
+    width: 100%;
+  }
+
+  .reel h3 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    opacity: .85;
+    text-align: center;
+  }
+
+  /* ✅ No-clipping window: baseline height, but expands if future glyphs are taller */
+  .window {
+    min-height: 92px;
+    height: auto;
+    border-radius: 10px;
+    background: #f7f7f7;
+    display: grid;
+    place-items: center;
+    overflow: visible;
+    user-select: none;
+    width: 100%;
+  }
+
+  .window pre {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.25;
+    padding: 6px;
+    white-space: pre;
+    text-align: center;
+  }
+
+  .btnRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+    justify-content: center;
+    width: 100%;
+  }
+  .btnRow button { width: 100%; }
+
+  .preview {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 12px; /* keeps your old look */
+  }
+
+  .preview pre {
+    margin: 0;
+    font-size: 20px;
+    line-height: 1.25;
+    white-space: pre;
+    text-align: left; /* IMPORTANT: keeps ASCII alignment */
+  }
+
+  .hint {
+    font-size: 13px;
+    opacity: .8;
+    line-height: 1.35;
+    text-align: center;
+  }
+
+  .kbdHint { display: inline; }
+
+  /* Use shared .card look for panels */
+  .reel,
+  .preview,
+  .historyCard {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.08);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    border-radius: 12px;
+    box-sizing: border-box;
+  }
+
+  /* History panel */
+  #historyPanel {
+    background: #f3efe6;
+    width: 100%;
+    padding: 10px 0;
+  }
+
+  #historyPanel > div {
+    background: #f3efe6;
+    border: 1px solid rgba(0,0,0,0.08);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+
+  .historyCard {
+    padding: 12px;
+    width: 100%;
+  }
+
+  /* =========================
+     Mobile-friendly tweaks
+     ========================= */
+  @media (max-width: 720px) {
+    /* NOTE: body margin + .wrap gap are already handled in site.css */
+
+    h1 {
+      font-size: 20px;
+      margin: 0 0 4px 0;
     }
 
-    .wrap {
-      max-width: 980px;
-      display: grid;
-      gap: 14px;
-      margin: 0 auto;
-      justify-items: center;
-    }
-
-    .homeLink {
-      align-self: flex-start;
-      text-decoration: none;
-      font-size: 14px;
-      opacity: 0.85;
-      margin-bottom: 4px;
-    }
-    .homeLink:hover { text-decoration: underline; }
-
-    h1 { margin: 0 0 10px 0; font-size: 28px; text-align: center; }
-
-    .controls {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: center;
-    }
+    .controls { gap: 8px; }
 
     button {
-      padding: 10px 14px;
-      cursor: pointer;
-      border: 1px solid #ccc;
-      background: #fff;
-      border-radius: 12px;
-      font-size: 16px;
-      line-height: 1;
-      /* Touch friendliness */
-      min-height: 44px; /* good tap target */
+      padding: 8px 10px;
+      font-size: 15px;
+      min-height: 40px;
     }
-    button:active { transform: translateY(1px); }
 
     .reels {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 12px;
-      justify-items: center;
-      width: 100%;
+      grid-template-columns: 1fr;
+      gap: 10px;
     }
 
     .reel {
-      border: 1px solid #ccc;
-      border-radius: 12px;
-      padding: 10px;
-      width: 100%;
-      box-sizing: border-box;
+      max-width: 520px;
+      padding: 8px;
     }
 
     .reel h3 {
-      margin: 0 0 8px 0;
-      font-size: 14px;
-      opacity: .85;
-      text-align: center;
+      margin: 0 0 6px 0;
+      font-size: 13px;
     }
 
-    /* ✅ No-clipping window: baseline height, but expands if future glyphs are taller */
-    .window {
-      min-height: 92px;
-      height: auto;
-      border-radius: 10px;
-      background: #f7f7f7;
-      display: grid;
-      place-items: center;
-      overflow: visible; /* was hidden */
-      user-select: none;
-      width: 100%;
-      box-sizing: border-box;
-    }
+    .window { min-height: 70px; }
 
     .window pre {
-      margin: 0;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 18px;
-      line-height: 1.25;
-      padding: 6px;
-      white-space: pre;
-      text-align: center; /* ok for reel windows */
+      font-size: 16px;
+      padding: 3px;
+      line-height: 1.2;
     }
 
     .btnRow {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 10px;
-      justify-content: center;
-      width: 100%;
-    }
-    .btnRow button { width: 100%; }
-
-    .preview{
-      border: 1px solid #ccc;
-      border-radius: 12px;
-      padding: 12px;
-      background: #fff;
-      display: flex;
-      justify-content: center;
-      width: 100%;
-      box-sizing: border-box;
+      gap: 8px;
+      margin-top: 8px;
     }
 
-    .preview pre{
-      margin: 0;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 20px;
-      line-height: 1.25;
-      white-space: pre;
-      text-align: left; /* IMPORTANT: keeps ASCII alignment */
+    .btnRow button {
+      min-height: 38px;
+      padding: 8px 10px;
+      font-size: 14px;
     }
+
+    .preview { padding: 8px; }
+    .preview pre { font-size: 18px; }
 
     .hint {
-      font-size: 13px;
-      opacity: .8;
-      line-height: 1.35;
-      text-align: center;
+      font-size: 11px;
+      line-height: 1.25;
+      margin-top: 4px;
     }
-    .kbdHint { display: inline; }
+  }
 
-    /* Soft card styling */
-    .reel,
-    .preview {
-      background: #fff;
-      border: 1px solid rgba(0,0,0,0.08);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-    }
+  /* Touch devices: keyboard hints aren’t useful */
+  @media (hover: none) and (pointer: coarse) {
+    .kbdHint { display: none; }
+  }
 
-    /* History panel uses page sepia */
-    #historyPanel > div {
-      background: #f3efe6; /* same sepia as page */
-      border: 1px solid rgba(0,0,0,0.08);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-    }
+  /* Optional: reduce motion on iOS/Android accessibility settings */
+  @media (prefers-reduced-motion: reduce) {
+    button:active { transform: none; }
+  }
+</style>
 
-    /* History panel full background */
-    #historyPanel {
-      background: #f3efe6;
-      width: 100%;
-      padding: 10px 0;
-    }
-
-    .historyCard {
-      border-radius: 12px;
-      padding: 12px;
-      width: 100%;
-      box-sizing: border-box;
-      background: #f3efe6;
-      border: 1px solid rgba(0,0,0,0.08);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-    }
-
-    /* =========================
-       Mobile-friendly tweaks
-       ========================= */
-
-    /* Phones: stack the 3 reels vertically, but more compact */
-    @media (max-width: 720px) {
-      body { margin: 10px; }
-
-      .wrap { gap: 10px; }
-
-      h1 {
-        font-size: 20px;
-        margin: 0 0 4px 0;
-      }
-
-      .controls { gap: 8px; }
-
-      button {
-        padding: 8px 10px;
-        font-size: 15px;
-        min-height: 40px;
-      }
-
-      .reels {
-        grid-template-columns: 1fr;
-        gap: 10px;
-      }
-
-      .reel {
-        max-width: 520px;
-        padding: 8px;
-      }
-
-      .reel h3 {
-        margin: 0 0 6px 0;
-        font-size: 13px;
-      }
-
-      /* ✅ Mobile baseline stays compact, but can grow if needed (no clipping) */
-      .window { min-height: 70px; }
-
-      .window pre {
-        font-size: 16px;
-        padding: 3px;
-        line-height: 1.2;
-      }
-
-      .btnRow {
-        gap: 8px;
-        margin-top: 8px;
-      }
-
-      .btnRow button {
-        min-height: 38px;
-        padding: 8px 10px;
-        font-size: 14px;
-      }
-
-      /* Final mobile squeeze (kept inside mobile) */
-      .preview { padding: 8px; }
-      .preview pre { font-size: 18px; }
-
-      .hint {
-        font-size: 11px;
-        line-height: 1.25;
-        margin-top: 4px;
-      }
-    }
-
-    /* Touch devices: keyboard hints aren’t useful */
-    @media (hover: none) and (pointer: coarse) {
-      .kbdHint { display: none; }
-    }
-
-    /* Optional: reduce motion on iOS/Android accessibility settings */
-    @media (prefers-reduced-motion: reduce) {
-      button:active { transform: none; }
-    }
-  </style>
 </head>
 
 <body>
@@ -262,7 +223,7 @@
     </div>
 
     <div class="reels">
-      <div class="reel" data-reel="0">
+      <div class="reel card" data-reel="0">
         <h3>Top line<span class="kbdHint"> (Q/W or mousewheel)</span></h3>
         <div class="window" title="Scroll wheel to cycle">
           <pre id="show0"></pre>
@@ -273,7 +234,7 @@
         </div>
       </div>
 
-      <div class="reel" data-reel="1">
+      <div class="reel card" data-reel="1">
         <h3>Middle line<span class="kbdHint"> (A/S or mousewheel)</span></h3>
         <div class="window" title="Scroll wheel to cycle">
           <pre id="show1"></pre>
@@ -284,7 +245,7 @@
         </div>
       </div>
 
-      <div class="reel" data-reel="2">
+      <div class="reel card" data-reel="2">
         <h3>Bottom line<span class="kbdHint"> (Z/X or mousewheel)</span></h3>
         <div class="window" title="Scroll wheel to cycle">
           <pre id="show2"></pre>
@@ -296,12 +257,12 @@
       </div>
     </div>
 
-    <div class="preview">
+    <div class="preview card">
       <pre id="output"></pre>
     </div>
 
     <div id="historyPanel" style="display:none; width:100%;">
-      <div class="historyCard">
+      <div class="historyCard card">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
           <div style="font-weight:600;">History</div>
           <div style="opacity:.75; font-size:13px;">Tap an entry to jump • Newest first</div>
