@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ryan’s Little Tools</title>
+  <title>Text Cat Mixer</title>
   <style>
     :root { font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif; }
-
     body {
       margin: 18px;
-      background: #f3efe6; /* warm sepia */
+      background: #f3efe6; /* warm, easy-on-the-eyes sepia */
     }
+
 
     .wrap {
       max-width: 980px;
@@ -20,74 +20,102 @@
       justify-items: center;
     }
 
-    h1 { margin: 0 0 4px 0; font-size: 28px; text-align: center; }
-    .subtitle { margin: 0 0 8px 0; opacity: .85; text-align: center; }
+    h1 { margin: 0 0 10px 0; font-size: 28px; text-align: center; }
 
-    .tools {
-      width: 100%;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .card {
-      background: #fff;
-      border: 1px solid rgba(0,0,0,0.08);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-      border-radius: 12px;
-      padding: 14px;
-      box-sizing: border-box;
-      text-decoration: none;
-      color: inherit;
-      display: grid;
-      gap: 8px;
-      cursor: pointer;
-    }
-
-    .card:active { transform: translateY(1px); }
-    .card:hover { outline: 2px solid rgba(0,0,0,0.06); }
-
-    .cardTitle {
-      font-size: 16px;
-      font-weight: 650;
-      margin: 0;
+    .controls {
       display: flex;
-      align-items: baseline;
-      justify-content: space-between;
       gap: 10px;
       flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
     }
 
-    .pill {
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(0,0,0,0.10);
-      background: #fffdfa; /* “paper” */
-      opacity: .9;
-      white-space: nowrap;
+    button {
+      padding: 10px 14px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      background: #fff;
+      border-radius: 12px;
+      font-size: 16px;
+      line-height: 1;
+      /* Touch friendliness */
+      min-height: 44px; /* good tap target */
+    }
+    button:active { transform: translateY(1px); }
+
+    .reels {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      justify-items: center;
+      width: 100%;
     }
 
-    .desc {
-      margin: 0;
-      opacity: .85;
-      line-height: 1.35;
+    .reel {
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      padding: 10px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .reel h3 {
+      margin: 0 0 8px 0;
       font-size: 14px;
+      opacity: .85;
+      text-align: center;
     }
 
-    .url {
+    .window {
+      height: 92px;
+      border-radius: 10px;
+      background: #f7f7f7;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      user-select: none;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .window pre {
       margin: 0;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 13px;
-      opacity: .8;
-      background: #fffdfa;
-      border: 1px solid rgba(0,0,0,0.10);
-      border-radius: 10px;
-      padding: 8px 10px;
-      width: fit-content;
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 18px;
+      line-height: 1.25;
+      padding: 6px;
+      white-space: pre;
+      text-align: center; /* ok for reel windows */
+    }
+
+    .btnRow {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+      justify-content: center;
+      width: 100%;
+    }
+    .btnRow button { width: 100%; }
+
+    .preview{
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      padding: 12px;
+      background: #fff;
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .preview pre{
+      margin: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 20px;
+      line-height: 1.25;
+      white-space: pre;
+      text-align: left; /* IMPORTANT: keeps ASCII alignment */
     }
 
     .hint {
@@ -95,52 +123,364 @@
       opacity: .8;
       line-height: 1.35;
       text-align: center;
-      margin-top: 6px;
     }
+    .kbdHint { display: inline; }
 
-    /* Phones: stack cards */
+
+/* Soft card styling */
+.reel,
+.preview {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+/* History panel uses page sepia */
+#historyPanel > div {
+  background: #f3efe6; /* same sepia as page */
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+/* History panel full background */
+#historyPanel {
+  background: #f3efe6;
+  width: 100%;
+  padding: 10px 0;
+}
+
+.historyCard {
+  border-radius: 12px;
+  padding: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  background: #f3efe6;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+
+
+    /* =========================
+       Mobile-friendly tweaks
+       ========================= */
+
+    /* Phones: stack the 3 reels vertically */
     @media (max-width: 720px) {
       body { margin: 14px; }
       h1 { font-size: 24px; }
-      .tools { grid-template-columns: 1fr; }
+
+      .reels { grid-template-columns: 1fr; }
+      .reel { max-width: 520px; } /* keeps things readable */
+      .window { height: 84px; }
+      .window pre { font-size: 18px; }
+      .preview pre { font-size: 20px; }
     }
 
+    /* Touch devices: keyboard hints aren’t useful */
+    @media (hover: none) and (pointer: coarse) {
+      .kbdHint { display: none; }
+    }
+
+    /* Optional: reduce motion on iOS/Android accessibility settings */
     @media (prefers-reduced-motion: reduce) {
-      .card:active { transform: none; }
+      button:active { transform: none; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Ryan’s Little Tools</h1>
-    <p class="subtitle">Small browser toys, tiny utilities, and other questionable inventions.</p>
+    <h1>Ryan's Impawsible Cat Combinator</h1>
 
-    <div class="tools">
-      <!-- Tool #1 -->
-      <a class="card" href="/tools/cat-mixer/" aria-label="Open Impawsible Cat Combinator">
-        <div class="cardTitle">
-          <span>Impawsible Cat Combinator</span>
-          <span class="pill">ASCII / text</span>
-        </div>
-        <p class="desc">Mix-and-match a three-line text cat. Randomize it, copy it, and admire your creation.</p>
-        <p class="url">/tools/cat-mixer/</p>
-      </a>
+    <div class="controls">
+      <button id="random">Randomize<span class="kbdHint"> (R)</span></button>
+      <button id="toggleHistory">History<span class="kbdHint"> (H)</span></button>
+      <button id="copy">Copy emoticon<span class="kbdHint"> (C)</span></button>
+    </div>
 
-      <!-- Tool #2 (placeholder) -->
-      <a class="card" href="#" aria-label="Coming soon">
-        <div class="cardTitle">
-          <span>Coming soon</span>
-          <span class="pill">placeholder</span>
+    <div class="reels">
+      <div class="reel" data-reel="0">
+        <h3>Top line<span class="kbdHint"> (Q/W or mousewheel)</span></h3>
+        <div class="window" title="Scroll wheel to cycle">
+          <pre id="show0"></pre>
         </div>
-        <p class="desc">Future silly tool goes here. Make something weird. Make it useful. Preferably both.</p>
-        <p class="url">/tools/your-next-tool/</p>
-      </a>
+        <div class="btnRow">
+          <button data-reel="0" data-dir="-1">◀ Prev</button>
+          <button data-reel="0" data-dir="1">Next ▶</button>
+        </div>
+      </div>
+
+      <div class="reel" data-reel="1">
+        <h3>Middle line<span class="kbdHint"> (A/S or mousewheel)</span></h3>
+        <div class="window" title="Scroll wheel to cycle">
+          <pre id="show1"></pre>
+        </div>
+        <div class="btnRow">
+          <button data-reel="1" data-dir="-1">◀ Prev</button>
+          <button data-reel="1" data-dir="1">Next ▶</button>
+        </div>
+      </div>
+
+      <div class="reel" data-reel="2">
+        <h3>Bottom line<span class="kbdHint"> (Z/X or mousewheel)</span></h3>
+        <div class="window" title="Scroll wheel to cycle">
+          <pre id="show2"></pre>
+        </div>
+        <div class="btnRow">
+          <button data-reel="2" data-dir="-1">◀ Prev</button>
+          <button data-reel="2" data-dir="1">Next ▶</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview">
+      <pre id="output"></pre>
+    </div>
+
+    <div id="historyPanel" style="display:none; width:100%;">
+<div class="historyCard">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+          <div style="font-weight:600;">History</div>
+          <div style="opacity:.75; font-size:13px;">Tap an entry to jump • Newest first</div>
+        </div>
+        <ol id="historyList" style="margin:10px 0 0 0; padding-left: 22px;"></ol>
+      </div>
     </div>
 
     <div class="hint">
-      Everything here runs in your browser. No accounts. No tracking. No cats were harmed.<br/>
-      If a tool breaks, it’s probably a feature.
+      <span class="kbdHint">Keyboard: Top Q/W, Middle A/S, Bottom Z/X, Randomize R, Copy C, History H.<br/></span>
+      No cats were harmed in the making of this generator.<br/>
+      In fact, they mostly seemed to enjoy it.
     </div>
   </div>
+
+  <script>
+    // NOTE: Backslashes must be escaped as \\ in JavaScript strings.
+    const reels = [
+      [
+        "/\\_/\\",
+        " /ᐠ\\/ᐟ\\",
+        "/\\^/\\",
+        "/\\o/\\",
+        "/\\-/\\",
+        "/\\~/\\",
+        "/\\•/\\",
+      ],
+      [
+        "( 0.0 )",
+        "( ^_^ )",
+        "( ^+^ )",
+        "( *-* )",
+        "( +_+ )",
+        "( X_X )",
+        "( ~_~ )",
+        "( =_= )",
+        "( o_o )",
+        "( O_O )",
+        "( @_@ )",
+        "( >_< )",
+        "( ;_; )",
+        "( T_T )",
+        "( •_• )",
+        "( •ᴗ• )",
+        "( -_- )",
+        "( ಠ_ಠ )",
+        "(0.0)",
+        "(^_^)",
+        "(^+^)",
+        "(*-*)",
+        "(+_+)",
+        "(X_X)",
+        "(~_~)",
+        "(=_=)",
+        "(o_o)",
+        "(O_O)",
+        "(@_@)",
+        "(>_<)",
+        "(;_;)",
+        "(T_T)",
+        "(•_•)",
+        "(•ᴗ•)",
+        "(-_-)",
+        "(ಠ_ಠ)",
+      ],
+      [
+        "=>-<=",
+        "=>.<=",
+        "->-<-",
+        "=> <=",
+        "==_==",
+        "~~ ~~",
+        " U U ",
+        "<^ ^>",
+        "v   v",
+        "~> <~",
+      ]
+    ];
+
+    const idx = [0,0,0];
+    const show = [
+      document.getElementById("show0"),
+      document.getElementById("show1"),
+      document.getElementById("show2"),
+    ];
+    const out = document.getElementById("output");
+
+    // --- History log (jump by clicking entries) ---
+    const history = [ [...idx] ];
+    const MAX_HISTORY = 300;
+
+    function setIdxFromState(state) {
+      idx[0] = state[0];
+      idx[1] = state[1];
+      idx[2] = state[2];
+    }
+
+    function padToWidth(s, w) {
+      if (s.length >= w) return s;
+      const left = Math.floor((w - s.length) / 2);
+      const right = w - s.length - left;
+      return " ".repeat(left) + s + " ".repeat(right);
+    }
+
+    function rpadToWidth(s, w) {
+      if (s.length >= w) return s;
+      return s + " ".repeat(w - s.length);
+    }
+
+    function stateToCat(state) {
+      const rawLines = [
+        reels[0][state[0]],
+        reels[1][state[1]],
+        reels[2][state[2]],
+      ];
+      const globalW = Math.max(...rawLines.map(s => s.length));
+      return rawLines.map(s => padToWidth(s, globalW)).join("\n");
+    }
+
+    function renderHistoryList() {
+      const list = document.getElementById("historyList");
+      if (!list) return;
+
+      list.innerHTML = "";
+
+      for (let i = history.length - 1; i >= 0; i--) {
+        const li = document.createElement("li");
+        li.style.margin = "8px 0";
+        li.style.cursor = "pointer";
+
+        const pre = document.createElement("pre");
+        pre.textContent = stateToCat(history[i]);
+        pre.style.margin = "0";
+        pre.style.padding = "10px";
+        pre.style.borderRadius = "12px";
+        pre.style.background = "#fffdfa"; // light paper on sepia
+        pre.style.border = "1px solid #ddd";
+        pre.style.whiteSpace = "pre";
+        pre.style.fontFamily = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+        pre.style.fontSize = "14px";
+        pre.style.lineHeight = "1.2";
+
+        li.addEventListener("click", () => {
+          setIdxFromState(history[i]);
+          render();
+          renderHistoryList();
+        });
+
+        li.appendChild(pre);
+        list.appendChild(li);
+      }
+    }
+
+    function recordState() {
+      history.push([...idx]);
+      if (history.length > MAX_HISTORY) history.shift();
+      renderHistoryList();
+    }
+
+    function render() {
+      for (let r = 0; r < 3; r++) {
+        const w = Math.max(...reels[r].map(x => x.length));
+        show[r].textContent = rpadToWidth(reels[r][idx[r]], w);
+      }
+
+      const rawLines = [
+        reels[0][idx[0]],
+        reels[1][idx[1]],
+        reels[2][idx[2]],
+      ];
+
+      const globalW = Math.max(...rawLines.map(s => s.length));
+      const paddedLines = rawLines.map(s => padToWidth(s, globalW));
+      const combined = paddedLines.join("\n");
+
+      out.textContent = combined;
+      out.style.width = globalW + "ch";
+    }
+
+    function step(reel, dir) {
+      const n = reels[reel].length;
+      idx[reel] = (idx[reel] + dir + n) % n;
+      recordState();
+      render();
+    }
+
+    function randomize() {
+      for (let r = 0; r < 3; r++) {
+        idx[r] = Math.floor(Math.random() * reels[r].length);
+      }
+      recordState();
+      render();
+    }
+
+    async function copyNow() {
+      const text = out.textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        window.prompt("Copy the emoticon:", text);
+      }
+    }
+
+    // Buttons (Prev/Next)
+    document.querySelectorAll("button[data-reel]").forEach(btn => {
+      btn.addEventListener("click", () => step(+btn.dataset.reel, +btn.dataset.dir));
+    });
+
+    // Mouse wheel per reel (desktop convenience)
+    document.querySelectorAll(".reel").forEach(panel => {
+      const r = +panel.dataset.reel;
+      panel.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        step(r, e.deltaY > 0 ? 1 : -1);
+      }, { passive: false });
+    });
+
+    document.getElementById("random").addEventListener("click", randomize);
+    document.getElementById("copy").addEventListener("click", copyNow);
+
+    document.getElementById("toggleHistory").addEventListener("click", () => {
+      const panel = document.getElementById("historyPanel");
+      panel.style.display = (panel.style.display === "none") ? "block" : "none";
+      renderHistoryList();
+    });
+
+    // Keyboard shortcuts (desktop)
+    document.addEventListener("keydown", (e) => {
+      const k = e.key.toLowerCase();
+      if (k === "q") step(0, -1);
+      if (k === "w") step(0,  1);
+      if (k === "a") step(1, -1);
+      if (k === "s") step(1,  1);
+      if (k === "z") step(2, -1);
+      if (k === "x") step(2,  1);
+      if (k === "r") randomize();
+      if (k === "c") copyNow();
+      if (k === "h") document.getElementById("toggleHistory").click();
+    });
+
+    render();
+    renderHistoryList();
+  </script>
 </body>
 </html>
