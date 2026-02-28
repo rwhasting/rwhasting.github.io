@@ -18,7 +18,6 @@
     grid-template-columns: 1fr 1fr;
     gap: 12px;
   }
-  /* Uses shared .card from site.css; this adds homepage-specific behavior */
   .toolCard {
     text-decoration: none;
     color: inherit;
@@ -27,9 +26,7 @@
     cursor: pointer;
   }
   .toolCard:active { transform: translateY(1px); }
-  .toolCard:hover {
-    outline: 2px solid rgba(0,0,0,0.06);
-  }
+  .toolCard:hover { outline: 2px solid rgba(0,0,0,0.06); }
   .cardTitle {
     font-size: 16px;
     font-weight: 650;
@@ -76,14 +73,12 @@
     text-align: center;
     margin-top: 6px;
   }
-  /* Placeholder should not behave like a link */
   .disabled {
     cursor: default;
     opacity: 0.85;
   }
   .disabled:hover { outline: none; }
   .disabled:active { transform: none; }
-  /* Phones: stack cards */
   @media (max-width: 720px) {
     h1 { font-size: 24px; }
     .tools { grid-template-columns: 1fr; }
@@ -92,7 +87,7 @@
   @media (prefers-reduced-motion: reduce) {
     .toolCard:active { transform: none; }
   }
-</style>
+  </style>
 </head>
 <body>
   <div class="wrap">
@@ -110,7 +105,17 @@
         <p class="url">/tools/cat-mixer/</p>
       </a>
 
-      <!-- Tool #2 (Wheel of Fate) -->
+      <!-- Tool #2 (Butterfly Effect) -->
+      <a class="card toolCard" href="/tools/butterfly-effect/" aria-label="Open Butterfly Effect">
+        <div class="cardTitle">
+          <span>Butterfly Effect</span>
+          <span class="pill">metamorphosis</span>
+        </div>
+        <p class="desc">Eat. Nap. Emerge. It worked for the caterpillar.</p>
+        <p class="url">/tools/butterfly-effect/</p>
+      </a>
+
+      <!-- Tool #3 (Wheel of Fate) -->
       <a class="card toolCard" href="/tools/wheel-of-fate/" aria-label="Open Wheel of Fate">
         <div class="cardTitle">
           <span>Wheel of Fate</span>
@@ -120,7 +125,7 @@
         <p class="url">/tools/wheel-of-fate/</p>
       </a>
 
-      <!-- Tool #3 (The Oracle) -->
+      <!-- Tool #4 (The Oracle) -->
       <a class="card toolCard" href="/tools/oracle/" aria-label="Open The Oracle">
         <div class="cardTitle">
           <span>The Oracle</span>
@@ -130,7 +135,7 @@
         <p class="url">/tools/oracle/</p>
       </a>
 
-      <!-- Tool #4 (placeholder) -->
+      <!-- Tool #5 (placeholder) -->
       <div class="card toolCard disabled" role="note" aria-label="Coming soon">
         <div class="cardTitle">
           <span>Coming soon</span>
@@ -145,7 +150,7 @@
       Everything here runs in your browser.<br/>
       No accounts. No tracking (by me at least).<br/>
       No cats were harmed.<br/>
-      If a tool breaks, it's probably a feature.
+      If a tool breaks, that's on you. The tool was fine.
     </div>
   </div>
 </body>
