@@ -824,10 +824,13 @@
         leafHealth = 1;
         leafGrowing = false;
       }
-      // Reset leafHealth to 0 when entering CHRYSALIS so regrowth always fades in gently
+      // Reset leafHealth to 0 when entering CHRYSALIS so regrowth always fades in gently.
+      // leafGrowing = true immediately so the drawing code uses the regrowth branch
+      // (which keeps leaves invisible at leafHealth=0) rather than the climbing branch
+      // (which would snap them to full alpha when climbed=0).
       if (s === S.CHRYSALIS) {
         leafHealth = 0;
-        leafGrowing = false;
+        leafGrowing = true;
       }
     }
 
@@ -843,7 +846,16 @@
 
       ctx.clearRect(0,0,W,H);
       drawGround(groundY);
-      drawMilkweed(milkweedX, groundY, leafHealth, state === S.CLIMBING ? Math.min(stateDuration * Math.min(260, Math.max(160, H*0.82*0.40)) * 0.078, Math.min(260, Math.max(160, H*0.82*0.40)) * 0.885) : 0);
+      // climbed value to pass to drawMilkweed:
+      // CLIMBING: actual progress; PAUSE_TOP: fully climbed (leaves stay eaten);
+      // CHRYSALIS+: leafGrowing=true so climbed is ignored; others: 0 (leaves fully visible)
+      const stemH_mw = Math.min(260, Math.max(160, H*0.82*0.40));
+      const climbDist_mw = stemH_mw * 0.885;
+      const mwClimbed = state === S.CLIMBING
+        ? Math.min(stateDuration * stemH_mw * 0.078, climbDist_mw)
+        : state === S.PAUSE_TOP ? climbDist_mw
+        : 0;
+      drawMilkweed(milkweedX, groundY, leafHealth, mwClimbed);
 
       switch(state) {
 
@@ -984,7 +996,6 @@
           const catAlpha = Math.max(0, 1-morphProgress*1.4);
           // Leaves regrow during the hold phase (after morphing is done)
           if (stateDuration > morphDur) {
-            leafGrowing = true;
             leafHealth = Math.min(1, leafHealth + dt * 0.11);
           }
           drawFlower(flowerX, groundY);
