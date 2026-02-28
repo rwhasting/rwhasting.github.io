@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ryan's Wheel of Fate</title>
+  <link rel="stylesheet" href="/assets/site.css">
+  <style>
+    h1 { margin: 0 0 4px 0; font-size: 28px; text-align: center; }
+    .subtitle { margin: 0 0 4px 0; opacity: .85; text-align: center; font-size: 14px; }
+
+    /* ── Layout ── */
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      width: 100%;
+      align-items: start;
+    }
+
+    /* ── Wheel panel ── */
+    .wheelPanel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .wheelWrap {
+      position: relative;
+      width: 100%;
+      max-width: 340px;
+      aspect-ratio: 1;
+    }
+
+    /* Pointer triangle at top */
+    .pointer {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 14px solid transparent;
+      border-right: 14px solid transparent;
+      border-top: 28px solid #b85c00;
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
+      z-index: 10;
+    }
+
+    #wheelCanvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15), 0 0 0 4px #c8b89a, 0 0 0 7px rgba(0,0,0,0.08);
+      display: block;
+    }
+
+    /* Result banner */
+    .result {
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 10px 16px;
+      width: 100%;
+      max-width: 340px;
+    }
+    .result .resultLabel {
+      font-size: 13px;
+      opacity: .7;
+      margin-bottom: 2px;
+    }
+    .result .resultValue {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+    .result.hidden { opacity: 0; pointer-events: none; }
+
+    /* Spin button */
+    #spinBtn {
+      padding: 12px 32px;
+      font-size: 18px;
+      font-weight: 650;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      background: #fff;
+      cursor: pointer;
+      min-height: 48px;
+      transition: background 0.15s;
+      letter-spacing: 0.01em;
+    }
+    #spinBtn:hover { background: #f7f0e6; }
+    #spinBtn:active { transform: translateY(1px); }
+    #spinBtn:disabled { opacity: 0.5; cursor: default; transform: none; }
+
+    /* ── Options panel ── */
+    .optionsPanel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 14px;
+    }
+    .optionsPanel h2 {
+      margin: 0 0 4px 0;
+      font-size: 15px;
+      font-weight: 650;
+    }
+
+    .optionsList {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    .optionRow {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .optionRow input[type="text"] {
+      flex: 1;
+      padding: 8px 10px;
+      border: 1px solid rgba(0,0,0,0.15);
+      border-radius: 10px;
+      font-size: 14px;
+      background: #fffdfa;
+      font-family: inherit;
+      min-width: 0;
+    }
+    .optionRow input[type="text"]:focus {
+      outline: 2px solid rgba(184,92,0,0.4);
+      outline-offset: 1px;
+    }
+    .removeBtn {
+      padding: 6px 10px;
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 8px;
+      background: #fffdfa;
+      cursor: pointer;
+      font-size: 15px;
+      line-height: 1;
+      min-height: 34px;
+      min-width: 34px;
+      color: #888;
+    }
+    .removeBtn:hover { background: #ffe5e5; color: #c00; border-color: #fbb; }
+    .removeBtn:active { transform: translateY(1px); }
+
+    .addBtn {
+      padding: 8px 14px;
+      border: 1px dashed rgba(0,0,0,0.2);
+      border-radius: 10px;
+      background: transparent;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: inherit;
+      color: inherit;
+      opacity: .8;
+      text-align: left;
+    }
+    .addBtn:hover { background: #f7f0e6; opacity: 1; }
+    .addBtn:active { transform: translateY(1px); }
+
+    .optionCount {
+      font-size: 12px;
+      opacity: .6;
+      text-align: right;
+    }
+
+    /* ── Hint ── */
+    .hint {
+      font-size: 13px;
+      opacity: .8;
+      line-height: 1.35;
+      text-align: center;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 720px) {
+      h1 { font-size: 22px; }
+      .main {
+        grid-template-columns: 1fr;
+      }
+      .wheelPanel { order: 1; }
+      .optionsPanel { order: 2; }
+      .wheelWrap { max-width: 280px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #spinBtn:active { transform: none; }
+      .removeBtn:active { transform: none; }
+      .addBtn:active { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a href="/" class="homeLink">← Home</a>
+    <h1>Wheel of Fate</h1>
+    <p class="subtitle">Add your options. Spin. Accept your destiny.</p>
+
+    <div class="main">
+
+      <!-- Left: wheel + spin -->
+      <div class="wheelPanel">
+        <div class="wheelWrap">
+          <div class="pointer"></div>
+          <canvas id="wheelCanvas" width="600" height="600"></canvas>
+        </div>
+
+        <div id="resultCard" class="result card hidden">
+          <div>
+            <div class="resultLabel">The wheel has spoken:</div>
+            <div class="resultValue" id="resultText"></div>
+          </div>
+        </div>
+
+        <button id="spinBtn">🎡 Spin</button>
+      </div>
+
+      <!-- Right: options editor -->
+      <div class="optionsPanel card">
+        <h2>Options</h2>
+        <div class="optionsList" id="optionsList"></div>
+        <button class="addBtn" id="addBtn">+ Add option</button>
+        <div class="optionCount" id="optionCount"></div>
+      </div>
+
+    </div>
+
+    <div class="hint">
+      Everything here runs in your browser.<br/>
+      No accounts. No tracking (by me at least).<br/>
+      The wheel is impartial. Your feelings about the result are not its problem.
+    </div>
+  </div>
+
+  <script>
+    // ── Palette: warm colours that look good on sepia ──
+    const COLORS = [
+      "#e07b39", "#5b8dd9", "#6abf69", "#d4597a",
+      "#a06cd5", "#e0b840", "#4db8b8", "#d97b4f",
+      "#7eaadc", "#c26b9a", "#81c784", "#f0a050",
+    ];
+
+    // ── State ──
+    let options = ["Pizza", "Tacos", "Sushi", "Burgers", "Salad (ugh)"];
+    let angle = 0;           // current rotation in radians
+    let spinning = false;
+
+    // ── DOM refs ──
+    const canvas    = document.getElementById("wheelCanvas");
+    const ctx       = canvas.getContext("2d");
+    const spinBtn   = document.getElementById("spinBtn");
+    const resultCard = document.getElementById("resultCard");
+    const resultText = document.getElementById("resultText");
+    const optionsList = document.getElementById("optionsList");
+    const addBtn    = document.getElementById("addBtn");
+    const optionCount = document.getElementById("optionCount");
+
+    const W = canvas.width;
+    const CX = W / 2, CY = W / 2, R = W / 2 - 6;
+
+    // ── Draw wheel ──
+    function drawWheel(rot) {
+      ctx.clearRect(0, 0, W, W);
+      const n = options.length;
+
+      if (n === 0) {
+        ctx.fillStyle = "#ddd";
+        ctx.beginPath();
+        ctx.arc(CX, CY, R, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#888";
+        ctx.font = "bold 28px system-ui";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("Add options!", CX, CY);
+        return;
+      }
+
+      const slice = (Math.PI * 2) / n;
+
+      for (let i = 0; i < n; i++) {
+        const start = rot + i * slice;
+        const end   = start + slice;
+        const color = COLORS[i % COLORS.length];
+
+        // Slice fill
+        ctx.beginPath();
+        ctx.moveTo(CX, CY);
+        ctx.arc(CX, CY, R, start, end);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+
+        // Slice border
+        ctx.strokeStyle = "rgba(255,255,255,0.35)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Label
+        ctx.save();
+        ctx.translate(CX, CY);
+        ctx.rotate(start + slice / 2);
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+
+        const maxLen = 16;
+        let label = options[i] || "???";
+        if (label.length > maxLen) label = label.slice(0, maxLen - 1) + "…";
+
+        const fontSize = n <= 6 ? 22 : n <= 10 ? 17 : 13;
+        ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
+
+        // Shadow for readability
+        ctx.shadowColor = "rgba(0,0,0,0.35)";
+        ctx.shadowBlur = 3;
+        ctx.fillStyle = "#fff";
+        ctx.fillText(label, R - 14, 0);
+        ctx.restore();
+      }
+
+      // Center cap
+      ctx.beginPath();
+      ctx.arc(CX, CY, 22, 0, Math.PI * 2);
+      ctx.fillStyle = "#fff";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,0.12)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // ── Spin animation ──
+    function spin() {
+      if (spinning || options.length < 2) return;
+      spinning = true;
+      spinBtn.disabled = true;
+      resultCard.classList.add("hidden");
+
+      // Random total rotation: 5–10 full turns + random offset
+      const extraTurns = (5 + Math.random() * 5) * Math.PI * 2;
+      const finalOffset = Math.random() * Math.PI * 2;
+      const totalDelta = extraTurns + finalOffset;
+
+      const duration = 3500 + Math.random() * 1000; // ms
+      const startAngle = angle;
+      const startTime = performance.now();
+
+      function easeOut(t) {
+        // Cubic ease-out for satisfying deceleration
+        return 1 - Math.pow(1 - t, 3);
+      }
+
+      function frame(now) {
+        const elapsed = now - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        angle = startAngle + totalDelta * easeOut(t);
+        drawWheel(angle);
+
+        if (t < 1) {
+          requestAnimationFrame(frame);
+        } else {
+          angle = angle % (Math.PI * 2);
+          spinning = false;
+          spinBtn.disabled = false;
+          showResult();
+        }
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    // ── Figure out which slice the pointer (top = -π/2) lands on ──
+    function showResult() {
+      const n = options.length;
+      const slice = (Math.PI * 2) / n;
+
+      // Pointer is at the top (-π/2). We need to find which slice is there.
+      // The wheel is drawn starting from `angle` for slice 0.
+      // Normalize the pointer position relative to the wheel rotation.
+      const pointerAngle = (Math.PI * 1.5); // top = 3π/2 (equivalent to -π/2 mod 2π)
+      const normalized = ((pointerAngle - angle) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+      const winner = Math.floor(normalized / slice) % n;
+
+      resultText.textContent = options[winner];
+      resultCard.classList.remove("hidden");
+    }
+
+    // ── Options list UI ──
+    function renderOptions() {
+      optionsList.innerHTML = "";
+      options.forEach((opt, i) => {
+        const row = document.createElement("div");
+        row.className = "optionRow";
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = opt;
+        input.placeholder = "Enter an option…";
+        input.maxLength = 40;
+        input.addEventListener("input", () => {
+          options[i] = input.value;
+          drawWheel(angle);
+        });
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") addOption();
+        });
+
+        const rem = document.createElement("button");
+        rem.className = "removeBtn";
+        rem.textContent = "✕";
+        rem.title = "Remove";
+        rem.addEventListener("click", () => {
+          options.splice(i, 1);
+          renderOptions();
+          drawWheel(angle);
+        });
+
+        row.appendChild(input);
+        row.appendChild(rem);
+        optionsList.appendChild(row);
+      });
+
+      const filled = options.filter(o => o.trim()).length;
+      optionCount.textContent = filled === 1
+        ? "1 option — add at least one more to spin!"
+        : `${filled} option${filled === 0 ? "s" : "s"}`;
+
+      spinBtn.disabled = filled < 2;
+      drawWheel(angle);
+    }
+
+    function addOption() {
+      options.push("");
+      renderOptions();
+      // Focus the new input
+      const inputs = optionsList.querySelectorAll("input");
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    }
+
+    addBtn.addEventListener("click", addOption);
+    spinBtn.addEventListener("click", spin);
+
+    // Keyboard shortcut: Space or Enter to spin
+    document.addEventListener("keydown", (e) => {
+      if ((e.key === " " || e.key === "Enter") && !spinning && document.activeElement.tagName !== "INPUT") {
+        e.preventDefault();
+        spin();
+      }
+    });
+
+    // ── Init ──
+    renderOptions();
+    drawWheel(angle);
+  </script>
+</body>
+</html>
