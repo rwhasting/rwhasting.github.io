@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>The Oracle — Ryan's Workshop</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Special+Elite&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0806;
+      --surface:   #110e0a;
+      --border:    rgba(180,140,80,0.2);
+      --gold:      #c8a050;
+      --gold-dim:  #7a5f2a;
+      --amber:     #e8901a;
+      --text:      #c8baa0;
+      --text-dim:  #6a5a40;
+      --danger:    #8b1a1a;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IM Fell English', Georgia, serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px 64px;
+      gap: 0;
+      /* subtle noise texture */
+      background-image:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(180,100,10,0.07) 0%, transparent 70%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    }
+
+    /* ── Home link ── */
+    .homeLink {
+      align-self: flex-start;
+      text-decoration: none;
+      font-family: 'Special Elite', monospace;
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 28px;
+      letter-spacing: 0.05em;
+      transition: color 0.2s;
+    }
+    .homeLink:hover { color: var(--gold); text-decoration: underline; }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .eyeIcon {
+      font-size: 48px;
+      line-height: 1;
+      margin-bottom: 12px;
+      display: block;
+      filter: drop-shadow(0 0 12px rgba(200,160,80,0.5));
+      animation: pulseEye 4s ease-in-out infinite;
+    }
+
+    @keyframes pulseEye {
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(200,160,80,0.3)); }
+      50%       { filter: drop-shadow(0 0 20px rgba(200,160,80,0.7)); }
+    }
+
+    h1 {
+      font-family: 'UnifrakturMaguntia', cursive;
+      font-size: clamp(42px, 8vw, 72px);
+      color: var(--gold);
+      letter-spacing: 0.02em;
+      line-height: 1;
+      text-shadow: 0 0 40px rgba(200,160,80,0.3);
+    }
+
+    .tagline {
+      font-family: 'IM Fell English', Georgia, serif;
+      font-style: italic;
+      font-size: 14px;
+      color: var(--text-dim);
+      margin-top: 8px;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      width: 100%;
+      max-width: 480px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--gold-dim), transparent);
+      margin: 24px auto;
+    }
+
+    /* ── Main layout ── */
+    .wrap {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ── Options panel ── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .panelTitle {
+      font-family: 'Special Elite', monospace;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold-dim);
+      margin-bottom: 4px;
+    }
+
+    .optionsList {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+
+    .optionRow {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .optionRow input[type="text"] {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 9px 12px;
+      font-family: 'Special Elite', monospace;
+      font-size: 14px;
+      color: var(--text);
+      min-width: 0;
+      transition: border-color 0.2s;
+    }
+    .optionRow input[type="text"]::placeholder { color: var(--text-dim); }
+    .optionRow input[type="text"]:focus {
+      outline: none;
+      border-color: var(--gold-dim);
+    }
+
+    .removeBtn {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 3px;
+      color: var(--text-dim);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 6px 10px;
+      min-height: 36px;
+      min-width: 36px;
+      line-height: 1;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .removeBtn:hover { color: #c04040; border-color: rgba(192,64,64,0.3); }
+
+    .addBtn {
+      background: transparent;
+      border: 1px dashed var(--border);
+      border-radius: 3px;
+      color: var(--text-dim);
+      font-family: 'Special Elite', monospace;
+      font-size: 13px;
+      letter-spacing: 0.05em;
+      padding: 9px 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .addBtn:hover { color: var(--gold); border-color: var(--gold-dim); }
+
+    .optionCount {
+      font-family: 'Special Elite', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      text-align: right;
+    }
+
+    /* ── Consult button ── */
+    #consultBtn {
+      width: 100%;
+      padding: 16px;
+      background: transparent;
+      border: 1px solid var(--gold-dim);
+      border-radius: 4px;
+      color: var(--gold);
+      font-family: 'UnifrakturMaguntia', cursive;
+      font-size: 28px;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    #consultBtn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 120%, rgba(200,160,80,0.12), transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    #consultBtn:hover:not(:disabled)::before { opacity: 1; }
+    #consultBtn:hover:not(:disabled) {
+      border-color: var(--gold);
+      box-shadow: 0 0 20px rgba(200,160,80,0.15), inset 0 0 20px rgba(200,160,80,0.05);
+    }
+    #consultBtn:disabled { opacity: 0.35; cursor: default; }
+
+    /* ── Oracle stage ── */
+    #stage {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+    #stage.active { display: flex; }
+
+    /* Cycling display */
+    #cycler {
+      font-family: 'Special Elite', monospace;
+      font-size: clamp(22px, 5vw, 32px);
+      color: var(--amber);
+      text-align: center;
+      min-height: 2.2em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      width: 100%;
+      letter-spacing: 0.04em;
+      text-shadow: 0 0 20px rgba(232,144,26,0.5);
+      transition: opacity 0.05s;
+      word-break: break-word;
+    }
+
+    /* Final verdict */
+    #verdict {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 28px 20px;
+      width: 100%;
+      text-align: center;
+      animation: burnIn 0.6s ease-out forwards;
+    }
+
+    @keyframes burnIn {
+      0%   { opacity: 0; filter: brightness(3); }
+      30%  { opacity: 1; filter: brightness(2); }
+      100% { opacity: 1; filter: brightness(1); }
+    }
+
+    .verdictLabel {
+      font-family: 'Special Elite', monospace;
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .verdictAnswer {
+      font-family: 'UnifrakturMaguntia', cursive;
+      font-size: clamp(36px, 8vw, 60px);
+      color: var(--gold);
+      line-height: 1.1;
+      text-shadow: 0 0 30px rgba(200,160,80,0.5), 0 0 60px rgba(200,160,80,0.2);
+      word-break: break-word;
+    }
+
+    .verdictSubtext {
+      font-family: 'IM Fell English', Georgia, serif;
+      font-style: italic;
+      font-size: 15px;
+      color: var(--text-dim);
+      max-width: 360px;
+      line-height: 1.5;
+    }
+
+    /* Again button */
+    #againBtn {
+      display: none;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--text-dim);
+      font-family: 'Special Elite', monospace;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      padding: 10px 20px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    #againBtn:hover { color: var(--gold); border-color: var(--gold-dim); }
+
+    /* Flash overlay */
+    #flash {
+      position: fixed;
+      inset: 0;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 999;
+      transition: opacity 0.05s;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 48px;
+      font-family: 'Special Elite', monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      text-align: center;
+      line-height: 2;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 520px) {
+      body { padding: 20px 12px 48px; }
+      h1 { font-size: 48px; }
+      #consultBtn { font-size: 24px; padding: 14px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .eyeIcon { animation: none; }
+      @keyframes burnIn { from { opacity:1; filter:none; } }
+    }
+  </style>
+</head>
+<body>
+
+  <a href="/" class="homeLink">← Return to the Workshop</a>
+
+  <div class="header">
+    <span class="eyeIcon">👁</span>
+    <h1>The Oracle</h1>
+    <p class="tagline">It was always going to be this way.</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="wrap">
+
+    <!-- Options input -->
+    <div class="panel" id="inputPanel">
+      <div class="panelTitle">Present your options to the Oracle</div>
+      <div class="optionsList" id="optionsList"></div>
+      <button class="addBtn" id="addBtn">+ Add another option</button>
+      <div class="optionCount" id="optionCount"></div>
+    </div>
+
+    <!-- Consult button -->
+    <button id="consultBtn">Consult the Oracle</button>
+
+    <!-- Oracle stage -->
+    <div class="panel" id="stage">
+      <div id="cycler"></div>
+      <div id="verdict">
+        <div class="verdictLabel">The Oracle has decreed</div>
+        <div class="verdictAnswer" id="verdictAnswer"></div>
+        <div class="verdictSubtext" id="verdictSubtext"></div>
+      </div>
+      <button id="againBtn">Consult again</button>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    The Oracle is never wrong.<br/>
+    Your disagreement is noted and disregarded.<br/>
+    No cats were harmed. The Oracle cannot say the same for your ego.
+  </div>
+
+  <!-- Flash overlay -->
+  <div id="flash"></div>
+
+  <script>
+    // ── Deadpan verdict subtexts ──
+    const SUBTEXTS = [
+      "It was always going to be this way.",
+      "The Oracle has spoken. Dispute this at your peril.",
+      "Resistance is noted and disregarded.",
+      "Did you truly need confirmation? The Oracle is disappointed.",
+      "Some doors, once opened, cannot be closed.",
+      "The other options never stood a chance.",
+      "You already knew. You simply needed permission.",
+      "Fate is not a suggestion.",
+      "The Oracle does not explain itself.",
+      "Consider this matter closed.",
+      "Your hesitation was noted. It changed nothing.",
+      "This was foretold. Probably.",
+      "The Oracle has many powers. Caring about your feelings is not one of them.",
+      "Act accordingly.",
+      "You may now proceed with your life.",
+    ];
+
+    // ── State ──
+    let options = ["Pizza", "Tacos", "Sushi"];
+    let consulting = false;
+
+    // ── DOM ──
+    const optionsList  = document.getElementById("optionsList");
+    const addBtn       = document.getElementById("addBtn");
+    const optionCount  = document.getElementById("optionCount");
+    const consultBtn   = document.getElementById("consultBtn");
+    const stage        = document.getElementById("stage");
+    const cycler       = document.getElementById("cycler");
+    const verdict      = document.getElementById("verdict");
+    const verdictAnswer= document.getElementById("verdictAnswer");
+    const verdictSubtext = document.getElementById("verdictSubtext");
+    const againBtn     = document.getElementById("againBtn");
+    const flash        = document.getElementById("flash");
+    const inputPanel   = document.getElementById("inputPanel");
+
+    // ── Render options list ──
+    function renderOptions() {
+      optionsList.innerHTML = "";
+      options.forEach((opt, i) => {
+        const row = document.createElement("div");
+        row.className = "optionRow";
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = opt;
+        input.placeholder = "Enter an option…";
+        input.maxLength = 50;
+        input.addEventListener("input", () => { options[i] = input.value; updateCount(); });
+        input.addEventListener("keydown", e => { if (e.key === "Enter") addOption(); });
+
+        const rem = document.createElement("button");
+        rem.className = "removeBtn";
+        rem.textContent = "✕";
+        rem.title = "Remove";
+        rem.addEventListener("click", () => { options.splice(i, 1); renderOptions(); });
+
+        row.appendChild(input);
+        row.appendChild(rem);
+        optionsList.appendChild(row);
+      });
+      updateCount();
+    }
+
+    function updateCount() {
+      const filled = options.filter(o => o.trim()).length;
+      optionCount.textContent = filled < 2
+        ? `${filled} option${filled === 1 ? "" : "s"} — the Oracle requires at least two`
+        : `${filled} option${filled === 1 ? "" : "s"} offered`;
+      consultBtn.disabled = filled < 2;
+    }
+
+    function addOption() {
+      options.push("");
+      renderOptions();
+      const inputs = optionsList.querySelectorAll("input");
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    }
+
+    addBtn.addEventListener("click", addOption);
+
+    // ── The consultation ──
+    consultBtn.addEventListener("click", startConsultation);
+    againBtn.addEventListener("click", resetStage);
+
+    function startConsultation() {
+      if (consulting) return;
+      const filled = options.filter(o => o.trim());
+      if (filled.length < 2) return;
+
+      consulting = true;
+      consultBtn.disabled = true;
+
+      // Show stage, hide verdict
+      stage.classList.add("active");
+      verdict.style.display = "none";
+      againBtn.style.display = "none";
+      cycler.style.opacity = "1";
+      cycler.textContent = "";
+
+      // Scroll to stage
+      stage.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      // Pick winner now (secretly)
+      const winner = filled[Math.floor(Math.random() * filled.length)];
+
+      // Cycling animation: fast → slow → stop
+      const totalDuration = 2800;
+      const startTime = performance.now();
+      let lastSwitch = 0;
+
+      function getInterval(elapsed) {
+        // Start at 60ms, slow to 380ms over the duration
+        const t = Math.min(elapsed / totalDuration, 1);
+        const ease = t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2; // ease-in-out cubic
+        return 60 + ease * 320;
+      }
+
+      function cycle(now) {
+        const elapsed = now - startTime;
+        if (elapsed >= totalDuration) {
+          // Final flash and reveal
+          doFlash(() => showVerdict(winner));
+          return;
+        }
+        const interval = getInterval(elapsed);
+        if (now - lastSwitch >= interval) {
+          // Pick a random option (avoid showing winner too early)
+          const pool = filled.filter(o => elapsed < totalDuration * 0.8 ? o !== winner : true);
+          const shown = pool[Math.floor(Math.random() * pool.length)];
+          cycler.textContent = shown;
+          cycler.style.opacity = "0.6";
+          setTimeout(() => { cycler.style.opacity = "1"; }, 20);
+          lastSwitch = now;
+        }
+        requestAnimationFrame(cycle);
+      }
+      requestAnimationFrame(cycle);
+    }
+
+    function doFlash(callback) {
+      flash.style.transition = "none";
+      flash.style.opacity = "0.9";
+      setTimeout(() => {
+        flash.style.transition = "opacity 0.4s ease-out";
+        flash.style.opacity = "0";
+        callback();
+      }, 60);
+    }
+
+    function showVerdict(winner) {
+      cycler.style.opacity = "0";
+      verdictAnswer.textContent = winner;
+      verdictSubtext.textContent = SUBTEXTS[Math.floor(Math.random() * SUBTEXTS.length)];
+      verdict.style.display = "flex";
+      againBtn.style.display = "inline-block";
+      consulting = false;
+    }
+
+    function resetStage() {
+      stage.classList.remove("active");
+      verdict.style.display = "none";
+      againBtn.style.display = "none";
+      cycler.textContent = "";
+      consultBtn.disabled = false;
+      inputPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    // ── Keyboard: Enter to consult ──
+    document.addEventListener("keydown", e => {
+      if (e.key === "Enter" && document.activeElement.tagName !== "INPUT" && !consulting) {
+        consultBtn.click();
+      }
+    });
+
+    // ── Init ──
+    renderOptions();
+  </script>
+</body>
+</html>
