@@ -3,23 +3,21 @@
 <head>
   <meta charset="utf-8" />
   <link rel="icon" href="/favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
   <link rel="manifest" href="/site.webmanifest">
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ryan’s Workshop</title>
+  <title>Ryan's Workshop</title>
   <link rel="stylesheet" href="/assets/site.css">
   <style>
   h1 { margin: 0 0 4px 0; font-size: 28px; text-align: center; }
   .subtitle { margin: 0 0 8px 0; opacity: .85; text-align: center; }
-
   .tools {
     width: 100%;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
   }
-
   /* Uses shared .card from site.css; this adds homepage-specific behavior */
   .toolCard {
     text-decoration: none;
@@ -28,13 +26,10 @@
     gap: 8px;
     cursor: pointer;
   }
-
   .toolCard:active { transform: translateY(1px); }
-
   .toolCard:hover {
     outline: 2px solid rgba(0,0,0,0.06);
   }
-
   .cardTitle {
     font-size: 16px;
     font-weight: 650;
@@ -45,7 +40,6 @@
     gap: 10px;
     flex-wrap: wrap;
   }
-
   .pill {
     font-size: 12px;
     padding: 4px 10px;
@@ -55,14 +49,12 @@
     opacity: .9;
     white-space: nowrap;
   }
-
   .desc {
     margin: 0;
     opacity: .85;
     line-height: 1.35;
     font-size: 14px;
   }
-
   .url {
     margin: 0;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -77,7 +69,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-
   .hint {
     font-size: 13px;
     opacity: .8;
@@ -85,7 +76,6 @@
     text-align: center;
     margin-top: 6px;
   }
-
   /* Placeholder should not behave like a link */
   .disabled {
     cursor: default;
@@ -93,26 +83,23 @@
   }
   .disabled:hover { outline: none; }
   .disabled:active { transform: none; }
-
   /* Phones: stack cards */
   @media (max-width: 720px) {
     h1 { font-size: 24px; }
     .tools { grid-template-columns: 1fr; }
     .hint { font-size: 12px; line-height: 1.25; }
   }
-
   @media (prefers-reduced-motion: reduce) {
     .toolCard:active { transform: none; }
   }
 </style>
-
 </head>
 <body>
   <div class="wrap">
-    <h1>Ryan’s Workshop</h1>
+    <h1>Ryan's Workshop</h1>
     <p class="subtitle">Harmless Tools, Toys, and Other Questionable Inventions</p>
-
     <div class="tools">
+
       <!-- Tool #1 (Cat Combinator) -->
       <a class="card toolCard" href="/tools/cat-mixer/" aria-label="Open Impawsible Cat Combinator">
         <div class="cardTitle">
@@ -123,7 +110,17 @@
         <p class="url">/tools/cat-mixer/</p>
       </a>
 
-      <!-- Tool #2 (placeholder) -->
+      <!-- Tool #2 (Wheel of Fate) -->
+      <a class="card toolCard" href="/tools/wheel-of-fate/" aria-label="Open Wheel of Fate">
+        <div class="cardTitle">
+          <span>Wheel of Fate</span>
+          <span class="pill">spin</span>
+        </div>
+        <p class="desc">Add your options, give it a spin, and accept your destiny. Great for lunch, life choices, and avoiding responsibility.</p>
+        <p class="url">/tools/wheel-of-fate/</p>
+      </a>
+
+      <!-- Tool #3 (placeholder) -->
       <div class="card toolCard disabled" role="note" aria-label="Coming soon">
         <div class="cardTitle">
           <span>Coming soon</span>
@@ -132,16 +129,14 @@
         <p class="desc">Make something weird. Make something useful. Preferably make both.</p>
         <p class="url">/tools/next-tool/</p>
       </div>
-    </div>
 
+    </div>
     <div class="hint">
       Everything here runs in your browser.<br/>
       No accounts. No tracking (by me at least).<br/>
       No cats were harmed.<br/>
-      If a tool breaks, it’s probably a feature.
+      If a tool breaks, it's probably a feature.
     </div>
   </div>
 </body>
 </html>
-
-
