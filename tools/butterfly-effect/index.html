@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Butterfly Effect — Ryan's Workshop</title>
+  <link rel="stylesheet" href="/assets/site.css">
+  <style>
+    body {
+      background: #f3efe6;
+      margin: 0;
+      overflow: hidden;
+    }
+    .homeLink {
+      position: fixed;
+      top: 14px;
+      left: 16px;
+      text-decoration: none;
+      font-size: 13px;
+      opacity: 0.6;
+      z-index: 10;
+      font-family: system-ui, sans-serif;
+      color: #5a4a30;
+      transition: opacity 0.2s;
+    }
+    .homeLink:hover { opacity: 1; text-decoration: underline; }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: system-ui, sans-serif;
+      font-size: 12px;
+      color: #9a8060;
+      opacity: 0.7;
+      pointer-events: none;
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+      text-align: center;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <a href="/" class="homeLink">← Home</a>
+  <canvas id="c"></canvas>
+  <div class="hint">
+    No butterflies were harmed in the making of this page.<br/>
+    The caterpillar, however, had a lot going on.
+  </div>
+
+  <script>
+  (() => {
+    const canvas = document.getElementById("c");
+    const ctx = canvas.getContext("2d");
+
+    let W, H;
+    function resize() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener("resize", () => { resize(); initPositions(); });
+
+    const INK_LIGHT = "rgba(58,46,30,0.3)";
+    const WING_FILL = "rgba(58,46,30,0.04)";
+    const WING_VEIN = "rgba(58,46,30,0.15)";
+
+    function setInk(lw = 1.2, alpha = 1) {
+      ctx.strokeStyle = `rgba(58,46,30,${alpha})`;
+      ctx.lineWidth = lw;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+    }
+
+    // ══════════════════════════════════════════
+    //  BUTTERFLY
+    // ══════════════════════════════════════════
+    function drawButterfly(x, y, wingBeat, scale = 1, alpha = 1) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+      ctx.globalAlpha = alpha;
+
+      const wb = Math.sin(wingBeat);
+      const openness = 0.55 + wb * 0.45;
+
+      for (let side of [-1, 1]) {
+        ctx.save();
+        ctx.scale(side, 1);
+
+        const fw = 52 * openness, fh = 38;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(fw*0.3, -fh*0.5, fw, -fh*0.8, fw, -fh*0.2);
+        ctx.bezierCurveTo(fw, fh*0.3, fw*0.4, fh*0.5, 0, fh*0.3);
+        ctx.closePath();
+        ctx.fillStyle = WING_FILL; ctx.fill();
+        setInk(1.1, alpha); ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(fw*0.2, -fh*0.1, fw*0.6, -fh*0.4, fw*0.85, -fh*0.15);
+        ctx.strokeStyle = WING_VEIN; ctx.lineWidth = 0.7; ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, fh*0.1);
+        ctx.bezierCurveTo(fw*0.15, fh*0.2, fw*0.5, fh*0.35, fw*0.75, fh*0.25);
+        ctx.stroke();
+
+        const hw = 38 * openness, hh = 30;
+        ctx.beginPath();
+        ctx.moveTo(0, fh*0.15);
+        ctx.bezierCurveTo(hw*0.3, fh*0.2, hw, fh*0.1, hw, hh*0.6);
+        ctx.bezierCurveTo(hw, hh, hw*0.3, hh*1.1, 0, hh*0.7);
+        ctx.closePath();
+        ctx.fillStyle = WING_FILL; ctx.fill();
+        setInk(1.0, alpha); ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(hw*0.6, hh*0.85);
+        ctx.bezierCurveTo(hw*0.75, hh*1.0, hw*0.55, hh*1.15, hw*0.4, hh*1.0);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Body
+      setInk(1.3, alpha);
+      ctx.beginPath();
+      ctx.moveTo(0, -22);
+      ctx.bezierCurveTo(3, -10, 3, 10, 1.5, 32);
+      ctx.bezierCurveTo(-1.5, 32, -3, 10, -3, -10);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(58,46,30,${0.12*alpha})`; ctx.fill(); ctx.stroke();
+
+      // Head
+      ctx.beginPath();
+      ctx.arc(0, -25, 5, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(58,46,30,${0.15*alpha})`; ctx.fill();
+      setInk(1.1, alpha); ctx.stroke();
+
+      // Antennae
+      setInk(0.9, alpha);
+      for (let side of [-1,1]) {
+        ctx.beginPath();
+        ctx.moveTo(side*2, -27);
+        ctx.bezierCurveTo(side*4, -35, side*12, -42, side*14, -46);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(side*14, -47, 2, 0, Math.PI*2);
+        ctx.fillStyle = INK_LIGHT; ctx.fill(); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // ══════════════════════════════════════════
+    //  FLOWER (butterfly resting spot)
+    // ══════════════════════════════════════════
+    function drawFlower(x, groundY, alpha = 1) {
+      if (alpha <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+
+      setInk(1.0);
+      ctx.beginPath();
+      ctx.moveTo(x, groundY);
+      ctx.bezierCurveTo(x-3, groundY-25, x+4, groundY-45, x, groundY-60);
+      ctx.stroke();
+
+      for (let side of [-1,1]) {
+        ctx.beginPath();
+        ctx.moveTo(x+side*2, groundY-30);
+        ctx.bezierCurveTo(x+side*16, groundY-28, x+side*20, groundY-38, x+side*14, groundY-42);
+        ctx.bezierCurveTo(x+side*8, groundY-38, x+side*4, groundY-32, x+side*2, groundY-30);
+        ctx.fillStyle = "rgba(58,46,30,0.05)"; ctx.fill();
+        setInk(0.9); ctx.stroke();
+      }
+
+      const fx = x, fy = groundY-68;
+      for (let i = 0; i < 6; i++) {
+        const angle = (i/6)*Math.PI*2;
+        const px = fx+Math.cos(angle)*10, py = fy+Math.sin(angle)*10;
+        ctx.beginPath();
+        ctx.ellipse(px, py, 5, 7, angle, 0, Math.PI*2);
+        ctx.fillStyle = "rgba(58,46,30,0.05)"; ctx.fill();
+        setInk(0.9); ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.arc(fx, fy, 6, 0, Math.PI*2);
+      ctx.fillStyle = "rgba(58,46,30,0.12)"; ctx.fill();
+      setInk(1.1); ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // ══════════════════════════════════════════
+    //  CATERPILLAR
+    // ══════════════════════════════════════════
+    function drawCaterpillar(x, y, walkPhase, scaleX = 1, alpha = 1) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scaleX, 1);
+      ctx.globalAlpha = alpha;
+      setInk(1.2, alpha);
+
+      const segs = 7, segR = 9, segSpacing = 14;
+      for (let i = segs-1; i >= 0; i--) {
+        const bx = -i*segSpacing;
+        const wave = Math.sin(walkPhase + i*0.7)*2;
+        ctx.beginPath();
+        ctx.arc(bx, wave, segR, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(58,46,30,${0.06*alpha})`; ctx.fill(); ctx.stroke();
+
+        if (i >= segs-4 && i < segs-1) {
+          const swing = Math.sin(walkPhase + i*1.2)*5;
+          for (let side of [-1,1]) {
+            ctx.beginPath();
+            ctx.moveTo(bx+side*3, wave+segR);
+            ctx.lineTo(bx+side*(9+swing), wave+segR+8);
+            ctx.stroke();
+          }
+        } else if (i < segs-4) {
+          for (let side of [-1,1]) {
+            ctx.beginPath();
+            ctx.moveTo(bx+side*3, wave+segR);
+            ctx.lineTo(bx+side*7, wave+segR+6);
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Head
+      const hw = Math.sin(walkPhase)*2;
+      ctx.beginPath();
+      ctx.arc(0, hw, segR+1, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(58,46,30,${0.12*alpha})`; ctx.fill();
+      setInk(1.3, alpha); ctx.stroke();
+
+      ctx.beginPath(); ctx.arc(5, hw-3, 2, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(58,46,30,${alpha})`; ctx.fill();
+
+      setInk(0.8, alpha);
+      for (let side of [-1,1]) {
+        ctx.beginPath();
+        ctx.moveTo(side*3, hw-segR);
+        ctx.bezierCurveTo(side*6, hw-segR-8, side*10, hw-segR-12, side*8, hw-segR-16);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // ══════════════════════════════════════════
+    //  CLIMBING CATERPILLAR
+    //  Each segment follows the one in front along the stem.
+    //  turnProgress 0=horizontal, 1=fully vertical (head leads).
+    //  climbed = how many px up the stem the head is.
+    // ══════════════════════════════════════════
+    function drawClimbingCaterpillar(headX, headY, walkPhase, turnProgress, climbed, alpha = 1) {
+      const segs = 7, segR = 9, segSpacing = 14;
+      // The floor: segments on the ground sit at this Y
+      const floorY = groundY - segR;
+      // The stem X: once vertical, all segments hug this x
+      const stemX = headX;
+
+      // Build positions from head (i=0) to tail (i=segs-1).
+      // For each segment we know:
+      //   - its ideal Y = headY + i*segSpacing  (if fully vertical on stem)
+      //   - but if that Y > floorY, it's still on the ground at floorY
+      // Then X: if on ground → step left by segSpacing from previous X
+      //         if on stem   → stemX (hug the stem)
+      //         transition   → interpolate
+      const pts = [];
+      for (let i = 0; i < segs; i++) {
+        if (i === 0) {
+          pts.push({ x: headX, y: headY });
+          continue;
+        }
+        const prev = pts[i - 1];
+
+        // Where would this segment be if fully vertical?
+        const vertY = headY + i * segSpacing;
+        // Where would it be if fully horizontal (on ground, stepping left)?
+        const horizY = floorY;
+
+        if (vertY >= floorY) {
+          // This segment belongs on the ground
+          // Step left from previous, constrained to segSpacing distance
+          const dy = floorY - prev.y;  // prev may be above floor during transition
+          const dx = -Math.sqrt(Math.max(0, segSpacing * segSpacing - dy * dy));
+          pts.push({ x: prev.x + dx, y: floorY });
+        } else {
+          // This segment is on the stem — smoothly interpolate x toward stemX
+          // based on how far above the ground it is
+          const aboveGround = floorY - vertY;
+          const blendDist = segs * segSpacing; // full blend over one body-length
+          const blend = Math.min(1, aboveGround / blendDist);
+          const groundX = prev.x - segSpacing; // where it would be if horizontal
+          const sx = stemX + (groundX - stemX) * (1 - blend);
+          pts.push({ x: sx, y: vertY });
+        }
+      }
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      setInk(1.2);
+
+      // Draw tail-first so head is on top
+      for (let i = segs - 1; i >= 0; i--) {
+        const { x: bx, y: by } = pts[i];
+        const onGround = by >= floorY - 1;
+        // Wave only while on ground
+        const wave = onGround ? Math.sin(walkPhase + i * 0.7) * 2 : 0;
+
+        ctx.beginPath();
+        ctx.arc(bx, by + wave, segR, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(58,46,30,0.06)"; ctx.fill(); ctx.stroke();
+
+        // Legs — on ground: hang downward; on stem: stick sideways
+        if (i > 0 && i <= 5) {
+          const swing = Math.sin(walkPhase + i * 1.2) * (onGround ? 4 : 2);
+          for (let side of [-1, 1]) {
+            if (onGround) {
+              // Normal downward legs
+              ctx.beginPath();
+              ctx.moveTo(bx + side * 3, by + wave + segR);
+              ctx.lineTo(bx + side * (8 + swing), by + wave + segR + 7);
+              ctx.stroke();
+            } else {
+              // On stem: right-side legs (+1) reach toward stem and grip downward
+              // Left-side legs (-1) are shorter and tucked
+              const reach = side === 1 ? (segR + 8 + swing) : (segR + 3);
+              const droop = side === 1 ? 5 : 2;
+              ctx.beginPath();
+              ctx.moveTo(bx + side * segR, by);
+              ctx.lineTo(bx + side * reach, by + droop);
+              ctx.stroke();
+            }
+          }
+        }
+      }
+
+      // Head
+      const { x: hx, y: hy } = pts[0];
+      ctx.beginPath();
+      ctx.arc(hx, hy, segR + 1, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(58,46,30,0.12)"; ctx.fill();
+      setInk(1.3); ctx.stroke();
+
+      // Eye and antennae rotate with turnProgress
+      const headAngle = -(Math.PI / 2) * Math.min(1, turnProgress);
+      const eyeOffX = Math.cos(headAngle) * 5 + Math.sin(headAngle) * 3;
+      const eyeOffY = Math.sin(headAngle) * 5 - Math.cos(headAngle) * 3;
+      ctx.beginPath();
+      ctx.arc(hx + eyeOffX, hy + eyeOffY, 2, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(58,46,30,1)"; ctx.fill();
+
+      setInk(0.8);
+      const fwdX = Math.cos(headAngle), fwdY = Math.sin(headAngle);
+      const perpHX = Math.sin(headAngle), perpHY = -Math.cos(headAngle);
+      for (let side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(hx + perpHX*side*3, hy + perpHY*side*3);
+        ctx.bezierCurveTo(
+          hx + perpHX*side*6  + fwdX*4,  hy + perpHY*side*6  + fwdY*4,
+          hx + perpHX*side*10 + fwdX*6,  hy + perpHY*side*10 + fwdY*6,
+          hx + perpHX*side*8  + fwdX*10, hy + perpHY*side*8  + fwdY*10
+        );
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // ══════════════════════════════════════════
+    //  MILKWEED
+    // ══════════════════════════════════════════
+    function drawMilkweed(x, groundY, leafHealth = 1) {
+      ctx.save();
+      setInk(1.3);
+      ctx.beginPath();
+      ctx.moveTo(x, groundY);
+      ctx.bezierCurveTo(x-5, groundY-80, x+8, groundY-160, x, groundY-260);
+      ctx.stroke();
+
+      // Leaves disappear bottom-up as caterpillar climbs (driven by leafHealth 1→0),
+      // and regrow bottom-up during chrysalis (driven by leafHealth 0→1).
+      // leafHealth is set in CLIMBING: 1 - (climbed/climbDist), so bottom leaf
+      // (at stem fraction 0.25) disappears when leafHealth drops below ~0.75,
+      // i.e. its disappear-threshold = 1 - lp.t.
+      // Regrow threshold = lp.t so bottom reappears first as leafHealth rises.
+      // We take whichever gives the higher alpha (disappear wins while climbing,
+      // regrow wins while in chrysalis once health starts rising).
+      const climbDist = 230;
+      for (const lp of [{t:0.25,a:0.4},{t:0.5,a:-0.35},{t:0.72,a:0.3}]) {
+        const fadeRange = 0.18;
+        // Disappearing (climbing): bottom leaf (t=0.25) fades first.
+        //   threshold = 1 - lp.t → bottom=0.75 fades first, top=0.28 fades last.
+        // Regrowing (chrysalis): bottom leaf reappears first.
+        //   threshold = lp.t → bottom=0.25 reappears first, top=0.72 reappears last.
+        const threshold = leafGrowing ? lp.t : (1 - lp.t);
+        const leafAlpha = Math.max(0, Math.min(1, (leafHealth - threshold) / fadeRange));
+        if (leafAlpha <= 0) continue;
+
+        const lx = x+Math.sin(lp.t*3)*5, ly = groundY-lp.t*260;
+        for (let side of [-1,1]) {
+          ctx.save();
+          ctx.translate(lx, ly);
+          ctx.rotate(side*(Math.PI*0.35+lp.a));
+          ctx.globalAlpha = leafAlpha;
+          ctx.beginPath();
+          ctx.moveTo(0,0);
+          ctx.bezierCurveTo(18,-8,42,-5,52,4);
+          ctx.bezierCurveTo(42,12,18,12,0,0);
+          ctx.fillStyle = "rgba(58,46,30,0.05)"; ctx.fill();
+          setInk(1.0); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0,0);
+          ctx.bezierCurveTo(18,0,38,2,52,4);
+          ctx.strokeStyle = "rgba(58,46,30,0.3)"; ctx.lineWidth = 0.7; ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      const fx = x, fy = groundY-265;
+      for (let i = 0; i < 7; i++) {
+        const a = (i/7)*Math.PI*2;
+        ctx.beginPath();
+        ctx.arc(fx+Math.cos(a)*12, fy+Math.sin(a)*7, 3.5, 0, Math.PI*2);
+        ctx.fillStyle = "rgba(58,46,30,0.08)"; ctx.fill();
+        setInk(0.9); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // ══════════════════════════════════════════
+    //  CHRYSALIS
+    // ══════════════════════════════════════════
+    function drawChrysalis(x, y, formedness, alpha = 1) {
+      if (formedness <= 0 || alpha <= 0) return;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.globalAlpha = alpha;
+      const w = 14*formedness, h = 34*formedness;
+
+      ctx.beginPath();
+      ctx.moveTo(0,0);
+      ctx.bezierCurveTo(w,0, w*1.1,h*0.5, w*0.8,h);
+      ctx.bezierCurveTo(w*0.3,h*1.1, -w*0.3,h*1.1, -w*0.8,h);
+      ctx.bezierCurveTo(-w*1.1,h*0.5, -w,0, 0,0);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(58,46,30,${0.08*alpha})`; ctx.fill();
+      setInk(1.3, alpha); ctx.stroke();
+
+      setInk(0.7, alpha*0.5);
+      for (let i = 1; i <= 4; i++) {
+        const ry = h*(i/5), rw = w*(0.9-i*0.08);
+        ctx.beginPath();
+        ctx.moveTo(-rw, ry);
+        ctx.bezierCurveTo(-rw*0.3, ry-3, rw*0.3, ry-3, rw, ry);
+        ctx.stroke();
+      }
+
+      setInk(1.0, alpha);
+      ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-18); ctx.stroke();
+
+      if (formedness > 0.7) {
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath();
+          ctx.arc((i-1)*w*0.4, h*0.18, 1.8, 0, Math.PI*2);
+          ctx.fillStyle = `rgba(140,100,20,${0.6*alpha*((formedness-0.7)/0.3)})`;
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
+    // ══════════════════════════════════════════
+    //  GROUND + GRASS
+    // ══════════════════════════════════════════
+    function drawGround(groundY) {
+      ctx.save();
+      setInk(0.8, 0.3);
+      ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(W, groundY); ctx.stroke();
+      for (const tfrac of [0.05,0.15,0.28,0.42,0.55,0.67,0.80,0.91]) {
+        const gx = tfrac*W;
+        for (let b = 0; b < 3; b++) {
+          const bx = gx+(b-1)*6, bh = 10+(b%2)*5, lean = (b-1)*4;
+          ctx.beginPath();
+          ctx.moveTo(bx, groundY);
+          ctx.quadraticCurveTo(bx+lean, groundY-bh*0.6, bx+lean*1.5, groundY-bh);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+
+    // ══════════════════════════════════════════
+    //  POSITIONS
+    // ══════════════════════════════════════════
+    let groundY, milkweedX, flowerX, chrysalisX, chrysalisY;
+    const catStartX = -130;
+
+    function initPositions() {
+      groundY    = H * 0.82;
+      milkweedX  = W * 0.72;
+      flowerX    = W * 0.28;
+      chrysalisX = milkweedX;
+      chrysalisY = groundY - 240;
+    }
+
+    function flightPos(time) {
+      const cx = W*0.45, cy = H*0.36, rx = W*0.26, ry = H*0.20;
+      return {
+        x: cx + Math.sin(time*0.38)*rx + Math.sin(time*0.19)*rx*0.3,
+        y: cy + Math.sin(time*0.27)*ry + Math.cos(time*0.13)*ry*0.4,
+      };
+    }
+
+    // ══════════════════════════════════════════
+    //  STATE MACHINE
+    // ══════════════════════════════════════════
+    const S = {
+      FLYING:"flying", RESTING:"resting", FLYING_AWAY:"flying_away",
+      CAT_ENTER:"cat_enter", CRAWLING:"crawling",
+      CLIMBING:"climbing", PAUSE_TOP:"pause_top", CHRYSALIS:"chrysalis",
+      EMERGING:"emerging", TAKEOFF:"takeoff",
+    };
+
+    let state, t, stateDuration, phase;
+    let walkPhase, wingBeat, restWingBeat;
+    let bfx, bfy, bfxStart, bfyStart;
+    let catX, catY, crawlStartX;
+    let leafHealth = 1;  // 1=full, 0=all eaten
+    let leafGrowing = false; // true during chrysalis regrowth, false during climb
+
+    function reset() {
+      state = S.FLYING; t = 0; stateDuration = 0; phase = 0;
+      leafHealth = 1;
+      leafGrowing = false;
+      walkPhase = 0; wingBeat = 0; restWingBeat = 0;
+      const sp = flightPos(0);
+      bfx = sp.x; bfy = sp.y; bfxStart = bfx; bfyStart = bfy;
+      catX = catStartX; catY = groundY-10; crawlStartX = catStartX;
+    }
+
+    function enterState(s) {
+      state = s; phase = 0; stateDuration = 0;
+    }
+
+    let lastTime = null;
+
+    function tick(ts) {
+      if (!lastTime) lastTime = ts;
+      const dt = Math.min((ts-lastTime)/1000, 0.05);
+      lastTime = ts;
+
+      t += dt; stateDuration += dt;
+      walkPhase += dt*4; wingBeat += dt*6; restWingBeat += dt*1.2;
+
+      ctx.clearRect(0,0,W,H);
+      drawGround(groundY);
+      drawMilkweed(milkweedX, groundY, leafHealth);
+
+      switch(state) {
+
+        // ── 1. Butterfly drifts elegantly ──
+        case S.FLYING: {
+          const pos = flightPos(t);
+          bfx = pos.x; bfy = pos.y;
+          drawFlower(flowerX, groundY);
+          drawButterfly(bfx, bfy, wingBeat);
+          if (stateDuration > 9) {
+            bfxStart = bfx; bfyStart = bfy;
+            enterState(S.RESTING);
+          }
+          break;
+        }
+
+        // ── 2. Butterfly glides to flower and rests — stays until startled ──
+        case S.RESTING: {
+          const approachDur = 2.0;
+          if (stateDuration <= approachDur) {
+            const p = stateDuration/approachDur;
+            const ease = 1-Math.pow(1-p,3);
+            bfx = bfxStart+(flowerX-bfxStart)*ease;
+            bfy = bfyStart+((groundY-72)-bfyStart)*ease;
+            drawFlower(flowerX, groundY);
+            drawButterfly(bfx, bfy, wingBeat*(1-p*0.85));
+          } else {
+            // Resting on flower — wings slowly fanning
+            bfx = flowerX; bfy = groundY-72;
+            drawFlower(flowerX, groundY);
+            drawButterfly(bfx, bfy, restWingBeat);
+          }
+          // Caterpillar walks in while butterfly is resting
+          if (stateDuration > approachDur + 1.5) {
+            const catTargetX = flowerX - 20; // caterpillar walks close to flower
+            catX = Math.min(catStartX + (stateDuration - (approachDur+1.5))*42, catTargetX);
+            catY = groundY-10;
+            drawCaterpillar(catX, catY, walkPhase);
+            // Butterfly gets startled when caterpillar reaches the flower
+            if (catX >= catTargetX) {
+              bfxStart = bfx; bfyStart = bfy;
+              enterState(S.FLYING_AWAY);
+            }
+          }
+          break;
+        }
+
+        // ── 3. Butterfly startled — darts away ──
+        case S.FLYING_AWAY: {
+          const dur = 2.5;
+          phase = Math.min(stateDuration/dur, 1);
+          const ease = phase<0.5 ? 2*phase*phase : 1-Math.pow(-2*phase+2,2)/2;
+          bfx = bfxStart + ease*W*0.65;
+          bfy = bfyStart - ease*H*0.5;
+          drawFlower(flowerX, groundY);
+          // Caterpillar continues walking toward milkweed while butterfly flees
+          catX = Math.min(catX + dt*42, milkweedX-30);
+          catY = groundY-10;
+          drawCaterpillar(catX, catY, walkPhase);
+          drawButterfly(bfx, bfy, wingBeat);
+          if (phase >= 1) {
+            crawlStartX = catX;
+            enterState(S.CRAWLING);
+          }
+          break;
+        }
+
+        // ── 4. (unused) ──
+        case S.CAT_ENTER: {
+          enterState(S.CRAWLING);
+          break;
+        }
+
+        // ── 4b. Caterpillar crawls the rest of the way to the milkweed base ──
+        case S.CRAWLING: {
+          const targetX = milkweedX - 30;
+          catX = Math.min(crawlStartX + stateDuration*42, targetX);
+          catY = groundY-10;
+          drawFlower(flowerX, groundY);
+          drawCaterpillar(catX, catY, walkPhase);
+          if (catX >= targetX) enterState(S.CLIMBING);
+          break;
+        }
+
+        // ── 5. Caterpillar climbs the milkweed ──
+        case S.CLIMBING: {
+          const climbDist = 230, speed = 18;
+          const climbed = Math.min(stateDuration*speed, climbDist);
+          leafHealth = Math.max(0, 1 - (climbed / climbDist));
+          leafGrowing = false;
+
+          // turnProgress 0→1 over the first 30% of climb — head leads, tail follows
+          const turnProgress = Math.min(1, (climbed / climbDist) / 0.30);
+
+          // Head tracks up the stem
+          const headX = milkweedX - 6;
+          const headY = groundY - climbed;
+
+          drawFlower(flowerX, groundY);
+          drawClimbingCaterpillar(headX, headY, walkPhase*0.7, turnProgress, climbed);
+          if (climbed >= climbDist) enterState(S.PAUSE_TOP);
+          break;
+        }
+
+        // ── 5b. Brief pause at the top before transforming ──
+        case S.PAUSE_TOP: {
+          const pauseDur = 1.8;
+          drawFlower(flowerX, groundY);
+          // Caterpillar rests at the top, still
+          drawClimbingCaterpillar(milkweedX-6, groundY-230, walkPhase*0.05, 1, 230);
+          if (stateDuration >= pauseDur) enterState(S.CHRYSALIS);
+          break;
+        }
+
+        // ── 6. Caterpillar transforms into chrysalis; leaves regrow during hold ──
+        case S.CHRYSALIS: {
+          const morphDur = 2.0, holdDur = 10.0, total = morphDur+holdDur;
+          phase = Math.min(stateDuration/total, 1);
+          const morphProgress = Math.min(stateDuration/morphDur, 1);
+          const ease = 1-Math.pow(1-morphProgress, 2);
+          const catAlpha = Math.max(0, 1-morphProgress*1.4);
+          // Leaves regrow during the hold phase (after morphing is done)
+          if (stateDuration > morphDur) {
+            leafGrowing = true;
+            leafHealth = Math.min(1, leafHealth + dt * 0.11);
+          }
+          drawFlower(flowerX, groundY);
+          if (catAlpha > 0) {
+            // Use same draw call & position as PAUSE_TOP so there's no jump
+            drawClimbingCaterpillar(milkweedX-6, groundY-230, walkPhase*0.02, 1, 230, catAlpha);
+          }
+          drawChrysalis(chrysalisX, chrysalisY, ease);
+          if (phase >= 1) enterState(S.EMERGING);
+          break;
+        }
+
+        // ── 7. Butterfly emerges from chrysalis ──
+        case S.EMERGING: {
+          const dur = 3.5;
+          phase = Math.min(stateDuration/dur, 1);
+          const ease = phase<0.5 ? 2*phase*phase : 1-Math.pow(-2*phase+2,2)/2;
+          const chrysAlpha = Math.max(0, 1-phase*1.5);
+          drawFlower(flowerX, groundY);
+          drawChrysalis(chrysalisX, chrysalisY, 1, chrysAlpha);
+          if (phase > 0.2) {
+            const bAlpha = Math.min((phase-0.2)/0.5, 1);
+            const bScale = 0.3+ease*0.7;
+            drawButterfly(chrysalisX, chrysalisY+10, (phase-0.2)*10, bScale, bAlpha);
+          }
+          if (phase >= 1) {
+            bfx = chrysalisX; bfy = chrysalisY+10;
+            enterState(S.TAKEOFF);
+          }
+          break;
+        }
+
+        // ── 8. Butterfly takes off, loop restarts ──
+        case S.TAKEOFF: {
+          const dur = 2.5;
+          phase = Math.min(stateDuration/dur, 1);
+          const ease = 1-Math.pow(1-phase,3);
+          bfy = (chrysalisY+10) - ease*H*0.22;
+          bfx = chrysalisX + Math.sin(phase*Math.PI)*80;
+          drawFlower(flowerX, groundY);
+          drawButterfly(bfx, bfy, wingBeat);
+          if (phase >= 1) {
+            // Keep t running so flightPos() continues smoothly — no jump
+            bfxStart = bfx; bfyStart = bfy;
+            catX = catStartX; catY = groundY-10;
+            enterState(S.FLYING);
+          }
+          break;
+        }
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    initPositions();
+    reset();
+    requestAnimationFrame(tick);
+  })();
+  </script>
+</body>
+</html>
