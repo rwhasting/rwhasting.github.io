@@ -46,10 +46,29 @@
       text-align: center;
       line-height: 1.6;
     }
+    .pageTitle {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Pinyon Script', cursive;
+      font-size: clamp(28px, 4vw, 46px);
+      color: #5a4a30;
+      opacity: 0.75;
+      pointer-events: none;
+      z-index: 10;
+      white-space: nowrap;
+      letter-spacing: 0.02em;
+      text-shadow: 0 1px 6px rgba(90,74,48,0.12);
+    }
   </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap" rel="stylesheet">
 </head>
 <body>
   <a href="/" class="homeLink">← Home</a>
+  <div class="pageTitle">The Butterfly Effect</div>
   <canvas id="c"></canvas>
   <div class="hint">
     No butterflies were harmed in the making of this page.<br/>
@@ -217,19 +236,13 @@
         ctx.arc(bx, wave, segR, 0, Math.PI*2);
         ctx.fillStyle = `rgba(58,46,30,${0.06*alpha})`; ctx.fill(); ctx.stroke();
 
-        if (i >= segs-4 && i < segs-1) {
+        if (i > 0) {
+          // All segments have swinging legs
           const swing = Math.sin(walkPhase + i*1.2)*5;
           for (let side of [-1,1]) {
             ctx.beginPath();
             ctx.moveTo(bx+side*3, wave+segR);
             ctx.lineTo(bx+side*(9+swing), wave+segR+8);
-            ctx.stroke();
-          }
-        } else if (i < segs-4) {
-          for (let side of [-1,1]) {
-            ctx.beginPath();
-            ctx.moveTo(bx+side*3, wave+segR);
-            ctx.lineTo(bx+side*7, wave+segR+6);
             ctx.stroke();
           }
         }
@@ -533,6 +546,8 @@
     let state, t, stateDuration, phase;
     let walkPhase, wingBeat, restWingBeat;
     let bfx, bfy, bfxStart, bfyStart;
+    let flyingBlendStart = null; // position butterfly was at when FLYING began
+    let flyingBlendDur = 1.5;    // seconds to blend into flight path
     let catX, catY, crawlStartX;
     let leafHealth = 1;  // 1=full, 0=all eaten
     let leafGrowing = false; // true during chrysalis regrowth, false during climb
@@ -544,6 +559,7 @@
       walkPhase = 0; wingBeat = 0; restWingBeat = 0;
       const sp = flightPos(0);
       bfx = sp.x; bfy = sp.y; bfxStart = bfx; bfyStart = bfy;
+      flyingBlendStart = null;
       catX = catStartX; catY = groundY-10; crawlStartX = catStartX;
     }
 
@@ -569,8 +585,20 @@
 
         // ── 1. Butterfly drifts elegantly ──
         case S.FLYING: {
+          // On first frame of FLYING, record where we entered from
+          if (flyingBlendStart === null) {
+            flyingBlendStart = { x: bfx, y: bfy };
+          }
           const pos = flightPos(t);
-          bfx = pos.x; bfy = pos.y;
+          // Blend from entry position to flight path over flyingBlendDur seconds
+          if (stateDuration < flyingBlendDur) {
+            const p = stateDuration / flyingBlendDur;
+            const ease = 1 - Math.pow(1 - p, 3);
+            bfx = flyingBlendStart.x + (pos.x - flyingBlendStart.x) * ease;
+            bfy = flyingBlendStart.y + (pos.y - flyingBlendStart.y) * ease;
+          } else {
+            bfx = pos.x; bfy = pos.y;
+          }
           drawFlower(flowerX, groundY);
           drawButterfly(bfx, bfy, wingBeat);
           if (stateDuration > 9) {
@@ -730,8 +758,8 @@
           drawFlower(flowerX, groundY);
           drawButterfly(bfx, bfy, wingBeat);
           if (phase >= 1) {
-            // Keep t running so flightPos() continues smoothly — no jump
             bfxStart = bfx; bfyStart = bfy;
+            flyingBlendStart = null; // will be set on first frame of FLYING
             catX = catStartX; catY = groundY-10;
             enterState(S.FLYING);
           }
