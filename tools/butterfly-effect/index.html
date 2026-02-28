@@ -121,7 +121,7 @@
         ctx.bezierCurveTo(fw*0.3, -fh*0.5, fw, -fh*0.8, fw, -fh*0.2);
         ctx.bezierCurveTo(fw, fh*0.3, fw*0.4, fh*0.5, 0, fh*0.3);
         ctx.closePath();
-        ctx.fillStyle = WING_FILL; ctx.fill();
+        ctx.fillStyle = "#f3efe6"; ctx.fill();
         setInk(1.1, alpha); ctx.stroke();
 
         ctx.beginPath();
@@ -139,7 +139,7 @@
         ctx.bezierCurveTo(hw*0.3, fh*0.2, hw, fh*0.1, hw, hh*0.6);
         ctx.bezierCurveTo(hw, hh, hw*0.3, hh*1.1, 0, hh*0.7);
         ctx.closePath();
-        ctx.fillStyle = WING_FILL; ctx.fill();
+        ctx.fillStyle = "#f3efe6"; ctx.fill();
         setInk(1.0, alpha); ctx.stroke();
 
         ctx.beginPath();
@@ -156,12 +156,12 @@
       ctx.bezierCurveTo(3, -10, 3, 10, 1.5, 32);
       ctx.bezierCurveTo(-1.5, 32, -3, 10, -3, -10);
       ctx.closePath();
-      ctx.fillStyle = `rgba(58,46,30,${0.12*alpha})`; ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#f3efe6"; ctx.fill(); ctx.stroke();
 
       // Head
       ctx.beginPath();
       ctx.arc(0, -25, 5, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(58,46,30,${0.15*alpha})`; ctx.fill();
+      ctx.fillStyle = "#f3efe6"; ctx.fill();
       setInk(1.1, alpha); ctx.stroke();
 
       // Antennae
@@ -234,7 +234,7 @@
         const wave = Math.sin(walkPhase + i*0.7)*2;
         ctx.beginPath();
         ctx.arc(bx, wave, segR, 0, Math.PI*2);
-        ctx.fillStyle = `rgba(58,46,30,${0.06*alpha})`; ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#f3efe6"; ctx.fill(); ctx.stroke();
 
         if (i > 0) {
           // All segments have swinging legs
@@ -252,7 +252,7 @@
       const hw = Math.sin(walkPhase)*2;
       ctx.beginPath();
       ctx.arc(0, hw, segR+1, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(58,46,30,${0.12*alpha})`; ctx.fill();
+      ctx.fillStyle = "#f3efe6"; ctx.fill();
       setInk(1.3, alpha); ctx.stroke();
 
       ctx.beginPath(); ctx.arc(5, hw-3, 2, 0, Math.PI*2);
@@ -332,7 +332,7 @@
 
         ctx.beginPath();
         ctx.arc(bx, by + wave, segR, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(58,46,30,0.06)"; ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#f3efe6"; ctx.fill(); ctx.stroke();
 
         // Legs — on ground: hang downward; on stem: stick sideways
         if (i > 0 && i <= 5) {
@@ -362,7 +362,7 @@
       const { x: hx, y: hy } = pts[0];
       ctx.beginPath();
       ctx.arc(hx, hy, segR + 1, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(58,46,30,0.12)"; ctx.fill();
+      ctx.fillStyle = "#f3efe6"; ctx.fill();
       setInk(1.3); ctx.stroke();
 
       // Eye and antennae rotate with turnProgress
@@ -465,7 +465,7 @@
       ctx.bezierCurveTo(w*0.3,h*1.1, -w*0.3,h*1.1, -w*0.8,h);
       ctx.bezierCurveTo(-w*1.1,h*0.5, -w,0, 0,0);
       ctx.closePath();
-      ctx.fillStyle = `rgba(58,46,30,${0.08*alpha})`; ctx.fill();
+      ctx.fillStyle = "#f3efe6"; ctx.fill();
       setInk(1.3, alpha); ctx.stroke();
 
       setInk(0.7, alpha*0.5);
@@ -492,22 +492,102 @@
     }
 
     // ══════════════════════════════════════════
-    //  GROUND + GRASS
+    //  BACKGROUND LANDSCAPE
+    //  Drawn first so everything sits on top of it.
+    //  Uses a seeded deterministic layout so it's stable every frame.
     // ══════════════════════════════════════════
     function drawGround(groundY) {
       ctx.save();
+
+      // ── Distant rolling hills ──
+      setInk(0.6, 0.12);
+      ctx.beginPath();
+      ctx.moveTo(0, groundY);
+      ctx.bezierCurveTo(W*0.15, groundY-55, W*0.28, groundY-70, W*0.38, groundY-45);
+      ctx.bezierCurveTo(W*0.48, groundY-22, W*0.55, groundY-60, W*0.68, groundY-75);
+      ctx.bezierCurveTo(W*0.80, groundY-88, W*0.90, groundY-50, W, groundY-35);
+      ctx.lineTo(W, groundY);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(58,46,30,0.045)";
+      ctx.fill();
+      ctx.stroke();
+
+      // ── Ground line ──
       setInk(0.8, 0.3);
-      ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(W, groundY); ctx.stroke();
-      for (const tfrac of [0.05,0.15,0.28,0.42,0.55,0.67,0.80,0.91]) {
-        const gx = tfrac*W;
-        for (let b = 0; b < 3; b++) {
-          const bx = gx+(b-1)*6, bh = 10+(b%2)*5, lean = (b-1)*4;
+      ctx.beginPath();
+      ctx.moveTo(0, groundY);
+      ctx.lineTo(W, groundY);
+      ctx.stroke();
+
+      // ── Rocks ──
+      const rocks = [
+        { fx: 0.08, w: 18, h: 10 },
+        { fx: 0.19, w: 11, h:  7 },
+        { fx: 0.38, w: 22, h: 12 },
+        { fx: 0.51, w:  9, h:  6 },
+        { fx: 0.63, w: 16, h:  9 },
+        { fx: 0.84, w: 20, h: 11 },
+        { fx: 0.93, w: 12, h:  7 },
+      ];
+      for (const r of rocks) {
+        const rx = r.fx * W, ry = groundY;
+        ctx.beginPath();
+        ctx.ellipse(rx, ry - r.h*0.45, r.w*0.5, r.h*0.55, 0, Math.PI, 0);
+        ctx.fillStyle = "rgba(58,46,30,0.05)";
+        ctx.fill();
+        setInk(0.8, 0.2);
+        ctx.stroke();
+      }
+
+      // ── Distant small shrubs ──
+      const shrubs = [
+        { fx: 0.10, h: 28, spread: 22 },
+        { fx: 0.45, h: 20, spread: 16 },
+        { fx: 0.60, h: 32, spread: 26 },
+        { fx: 0.88, h: 24, spread: 18 },
+      ];
+      for (const s of shrubs) {
+        const sx = s.fx * W;
+        // Stem
+        setInk(0.7, 0.18);
+        ctx.beginPath();
+        ctx.moveTo(sx, groundY);
+        ctx.lineTo(sx, groundY - s.h * 0.5);
+        ctx.stroke();
+        // Canopy — a few wispy arcs
+        for (let b = -1; b <= 1; b++) {
           ctx.beginPath();
-          ctx.moveTo(bx, groundY);
-          ctx.quadraticCurveTo(bx+lean, groundY-bh*0.6, bx+lean*1.5, groundY-bh);
+          ctx.moveTo(sx, groundY - s.h * 0.45);
+          ctx.bezierCurveTo(
+            sx + b * s.spread * 0.4, groundY - s.h * 0.7,
+            sx + b * s.spread * 0.8, groundY - s.h * 0.9,
+            sx + b * s.spread,       groundY - s.h * (0.6 + Math.abs(b)*0.15)
+          );
           ctx.stroke();
         }
       }
+
+      // ── Grass tufts (richer than before) ──
+      const tufts = [
+        0.04, 0.09, 0.14, 0.20, 0.25, 0.31, 0.36,
+        0.41, 0.47, 0.53, 0.58, 0.64, 0.69, 0.75,
+        0.80, 0.86, 0.90, 0.95,
+      ];
+      setInk(0.7, 0.28);
+      for (const tfrac of tufts) {
+        const gx = tfrac * W;
+        const blades = 3 + (Math.round(tfrac * 97) % 3); // 3-5 blades, stable
+        for (let b = 0; b < blades; b++) {
+          const bx = gx + (b - blades/2 + 0.5) * 5;
+          const bh = 8 + (Math.round(tfrac * 137 + b * 31) % 9);
+          const lean = (b - blades/2) * 3.5;
+          ctx.beginPath();
+          ctx.moveTo(bx, groundY);
+          ctx.quadraticCurveTo(bx + lean * 0.6, groundY - bh * 0.55, bx + lean, groundY - bh);
+          ctx.stroke();
+        }
+      }
+
       ctx.restore();
     }
 
