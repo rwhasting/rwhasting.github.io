@@ -538,12 +538,14 @@
     // ══════════════════════════════════════════
     //  MILKWEED
     // ══════════════════════════════════════════
-    function drawMilkweed(x, groundY, leafHealth = 1) {
+    function drawMilkweed(x, groundY, leafHealth = 1, climbed = 0) {
+      const stemH = Math.min(260, Math.max(160, H * 0.82 * 0.40));
+      const climbDist = stemH * 0.885; // caterpillar climbs 88.5% of stem height
       ctx.save();
       setInk(1.3);
       ctx.beginPath();
       ctx.moveTo(x, groundY);
-      ctx.bezierCurveTo(x-5, groundY-80, x+8, groundY-160, x, groundY-260);
+      ctx.bezierCurveTo(x-5, groundY-stemH*0.308, x+8, groundY-stemH*0.615, x, groundY-stemH);
       ctx.stroke();
 
       // Leaves disappear bottom-up as caterpillar climbs (driven by leafHealth 1→0),
@@ -554,37 +556,63 @@
       // Regrow threshold = lp.t so bottom reappears first as leafHealth rises.
       // We take whichever gives the higher alpha (disappear wins while climbing,
       // regrow wins while in chrysalis once health starts rising).
-      const climbDist = 230;
-      for (const lp of [{t:0.25,a:0.4},{t:0.5,a:-0.35},{t:0.72,a:0.3}]) {
-        const fadeRange = 0.18;
-        // Disappearing (climbing): bottom leaf (t=0.25) fades first.
-        //   threshold = 1 - lp.t → bottom=0.75 fades first, top=0.28 fades last.
-        // Regrowing (chrysalis): bottom leaf reappears first.
-        //   threshold = lp.t → bottom=0.25 reappears first, top=0.72 reappears last.
-        const threshold = leafGrowing ? lp.t : (1 - lp.t);
-        const leafAlpha = Math.max(0, Math.min(1, (leafHealth - threshold) / fadeRange));
+      // climbDist derived from stemH above
+      // Each leaf pair: t=position along stem (0=base, 1=top).
+      // angleL/angleR = outward spread from horizontal (larger = more upright).
+      // droopL/droopR = downward tilt so leaves hang naturally.
+      // Varied per pair so they look like a real alternating leaf arrangement.
+      const leafPairs = [
+        { t: 0.25, angleL: 0.42, angleR: 0.38, droopL: 0.18, droopR: 0.06 },
+        { t: 0.50, angleL: 0.30, angleR: 0.46, droopL: 0.05, droopR: 0.24 },
+        { t: 0.72, angleL: 0.40, angleR: 0.30, droopL: 0.14, droopR: 0.10 },
+      ];
+      const fadeRange = 0.18;
+
+      for (const lp of leafPairs) {
+        let leafAlpha;
+        if (leafGrowing) {
+          // Regrowing during chrysalis: bottom leaf reappears first (same as before)
+          const threshold = lp.t;
+          leafAlpha = Math.max(0, Math.min(1, (leafHealth - threshold) / fadeRange));
+        } else {
+          // Climbing: only start fading once caterpillar has actually reached this leaf.
+          // Leaf is at lp.t * climbDist px up the stem. Fade over the next fadeRange*climbDist px.
+          const leafPx = lp.t * climbDist;
+          const fadePx = fadeRange * climbDist;
+          leafAlpha = Math.max(0, Math.min(1, 1 - (climbed - leafPx) / fadePx));
+        }
         if (leafAlpha <= 0) continue;
 
-        const lx = x+Math.sin(lp.t*3)*5, ly = groundY-lp.t*260;
-        for (let side of [-1,1]) {
+        // Sample the actual stem bezier at t to get exact attachment point.
+        const bt = lp.t;
+        const lx = (1-bt)**3*x + 3*(1-bt)**2*bt*(x-5) + 3*(1-bt)*bt**2*(x+8) + bt**3*x;
+        const ly = (1-bt)**3*groundY + 3*(1-bt)**2*bt*(groundY-stemH*0.308) + 3*(1-bt)*bt**2*(groundY-stemH*0.615) + bt**3*(groundY-stemH);
+
+        for (const side of [-1, 1]) {
+          const angle = side === -1 ? lp.angleL : lp.angleR;
+          const droop = side === -1 ? lp.droopL : lp.droopR;
+          // Rotate outward from stem: side flips left/right, droop tilts downward
+          const rot = -(Math.PI * 0.5 - angle) - droop;
           ctx.save();
           ctx.translate(lx, ly);
-          ctx.rotate(side*(Math.PI*0.35+lp.a));
+          ctx.scale(side, 1);
+          ctx.rotate(rot);
           ctx.globalAlpha = leafAlpha;
           ctx.beginPath();
-          ctx.moveTo(0,0);
-          ctx.bezierCurveTo(18,-8,42,-5,52,4);
-          ctx.bezierCurveTo(42,12,18,12,0,0);
+          ctx.moveTo(0, 0);
+          ctx.bezierCurveTo(18, -8, 42, -5, 52, 4);
+          ctx.bezierCurveTo(42, 12, 18, 12, 0, 0);
           ctx.fillStyle = "rgba(58,46,30,0.05)"; ctx.fill();
           setInk(1.0); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(0,0);
-          ctx.bezierCurveTo(18,0,38,2,52,4);
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.bezierCurveTo(18, 0, 38, 2, 52, 4);
           ctx.strokeStyle = "rgba(58,46,30,0.3)"; ctx.lineWidth = 0.7; ctx.stroke();
           ctx.restore();
         }
       }
 
-      const fx = x, fy = groundY-265;
+      const fx = x, fy = groundY-stemH*1.02;
       for (let i = 0; i < 7; i++) {
         const a = (i/7)*Math.PI*2;
         ctx.beginPath();
@@ -805,7 +833,7 @@
 
       ctx.clearRect(0,0,W,H);
       drawGround(groundY);
-      drawMilkweed(milkweedX, groundY, leafHealth);
+      drawMilkweed(milkweedX, groundY, leafHealth, state === S.CLIMBING ? Math.min(stateDuration * Math.min(260, Math.max(160, H*0.82*0.40)) * 0.078, Math.min(260, Math.max(160, H*0.82*0.40)) * 0.885) : 0);
 
       switch(state) {
 
@@ -908,7 +936,8 @@
 
         // ── 5. Caterpillar climbs the milkweed ──
         case S.CLIMBING: {
-          const climbDist = 230, speed = 18;
+          const stemH = Math.min(260, Math.max(160, H * 0.82 * 0.40));
+          const climbDist = stemH * 0.885, speed = stemH * 0.078;
           const climbed = Math.min(stateDuration*speed, climbDist);
           leafHealth = Math.max(0, 1 - (climbed / climbDist));
           leafGrowing = false;
@@ -931,7 +960,7 @@
           const pauseDur = 1.8;
           drawFlower(flowerX, groundY);
           // Caterpillar rests at the top, still
-          drawClimbingCaterpillar(milkweedX-6, groundY-230, walkPhase*0.05, 1, 230);
+          drawClimbingCaterpillar(milkweedX-6, groundY-H*0.433*0.885, walkPhase*0.05, 1, H*0.433*0.885);
           if (stateDuration >= pauseDur) enterState(S.CHRYSALIS);
           break;
         }
@@ -951,7 +980,7 @@
           drawFlower(flowerX, groundY);
           if (catAlpha > 0) {
             // Use same draw call & position as PAUSE_TOP so there's no jump
-            drawClimbingCaterpillar(milkweedX-6, groundY-230, walkPhase*0.02, 1, 230, catAlpha);
+            drawClimbingCaterpillar(milkweedX-6, groundY-H*0.433*0.885, walkPhase*0.02, 1, H*0.433*0.885, catAlpha);
           }
           drawChrysalis(chrysalisX, chrysalisY, ease);
           if (phase >= 1) enterState(S.EMERGING);
