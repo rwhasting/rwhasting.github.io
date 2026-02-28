@@ -819,6 +819,16 @@
 
     function enterState(s) {
       state = s; phase = 0; stateDuration = 0;
+      // Reset leaf state on entering CLIMBING so leaves always start fully visible
+      if (s === S.CLIMBING) {
+        leafHealth = 1;
+        leafGrowing = false;
+      }
+      // Reset leafHealth to 0 when entering CHRYSALIS so regrowth always fades in gently
+      if (s === S.CHRYSALIS) {
+        leafHealth = 0;
+        leafGrowing = false;
+      }
     }
 
     let lastTime = null;
@@ -960,7 +970,7 @@
           const pauseDur = 1.8;
           drawFlower(flowerX, groundY);
           // Caterpillar rests at the top, still
-          drawClimbingCaterpillar(milkweedX-6, groundY-H*0.433*0.885, walkPhase*0.05, 1, H*0.433*0.885);
+          drawClimbingCaterpillar(milkweedX-6, groundY-(Math.min(260, Math.max(160, H*0.82*0.40)))*0.885, walkPhase*0.05, 1, (Math.min(260, Math.max(160, H*0.82*0.40)))*0.885);
           if (stateDuration >= pauseDur) enterState(S.CHRYSALIS);
           break;
         }
@@ -980,7 +990,7 @@
           drawFlower(flowerX, groundY);
           if (catAlpha > 0) {
             // Use same draw call & position as PAUSE_TOP so there's no jump
-            drawClimbingCaterpillar(milkweedX-6, groundY-H*0.433*0.885, walkPhase*0.02, 1, H*0.433*0.885, catAlpha);
+            drawClimbingCaterpillar(milkweedX-6, groundY-(Math.min(260, Math.max(160, H*0.82*0.40)))*0.885, walkPhase*0.02, 1, (Math.min(260, Math.max(160, H*0.82*0.40)))*0.885, catAlpha);
           }
           drawChrysalis(chrysalisX, chrysalisY, ease);
           if (phase >= 1) enterState(S.EMERGING);
