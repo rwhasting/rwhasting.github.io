@@ -116,24 +116,11 @@
         ctx.scale(side, 1);
 
         const fw = 52 * openness, fh = 38;
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.bezierCurveTo(fw*0.3, -fh*0.5, fw, -fh*0.8, fw, -fh*0.2);
-        ctx.bezierCurveTo(fw, fh*0.3, fw*0.4, fh*0.5, 0, fh*0.3);
-        ctx.closePath();
-        ctx.fillStyle = "#f3efe6"; ctx.fill();
-        setInk(1.1, alpha); ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.bezierCurveTo(fw*0.2, -fh*0.1, fw*0.6, -fh*0.4, fw*0.85, -fh*0.15);
-        ctx.strokeStyle = WING_VEIN; ctx.lineWidth = 0.7; ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(0, fh*0.1);
-        ctx.bezierCurveTo(fw*0.15, fh*0.2, fw*0.5, fh*0.35, fw*0.75, fh*0.25);
-        ctx.stroke();
-
         const hw = 38 * openness, hh = 30;
+
+        // ══ HINDWING (drawn first, sits behind forewing) ══
+
+        // Shape
         ctx.beginPath();
         ctx.moveTo(0, fh*0.15);
         ctx.bezierCurveTo(hw*0.3, fh*0.2, hw, fh*0.1, hw, hh*0.6);
@@ -142,10 +129,169 @@
         ctx.fillStyle = "#f3efe6"; ctx.fill();
         setInk(1.0, alpha); ctx.stroke();
 
+        // Dark border band — filled region just inside the hindwing margin
+        ctx.save();
+        ctx.clip(); // clip to hindwing shape
+        ctx.beginPath();
+        ctx.moveTo(0, fh*0.15);
+        ctx.bezierCurveTo(hw*0.3, fh*0.2, hw, fh*0.1, hw, hh*0.6);
+        ctx.bezierCurveTo(hw, hh, hw*0.3, hh*1.1, 0, hh*0.7);
+        ctx.closePath();
+        // Inset version — slightly smaller, creates the border band effect via stroke
+        ctx.strokeStyle = `rgba(58,46,30,${0.13*alpha})`;
+        ctx.lineWidth = 7;
+        ctx.stroke();
+        ctx.restore();
+
+        // Hindwing veins — 3 main radiating veins
+        ctx.strokeStyle = `rgba(58,46,30,${0.22*alpha})`; ctx.lineWidth = 0.7;
+        ctx.beginPath();
+        ctx.moveTo(0, fh*0.18);
+        ctx.bezierCurveTo(hw*0.22, fh*0.22, hw*0.68, hh*0.42, hw*0.88, hh*0.52);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, fh*0.28);
+        ctx.bezierCurveTo(hw*0.2, hh*0.52, hw*0.48, hh*0.82, hw*0.52, hh*0.98);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(hw*0.12, fh*0.20);
+        ctx.bezierCurveTo(hw*0.32, hh*0.38, hw*0.62, hh*0.52, hw*0.96, hh*0.56);
+        ctx.stroke();
+        // Cross-veins between hindwing veins
+        ctx.strokeStyle = `rgba(58,46,30,${0.13*alpha})`; ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(hw*0.38, hh*0.35); ctx.lineTo(hw*0.40, hh*0.55); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(hw*0.60, hh*0.46); ctx.lineTo(hw*0.58, hh*0.66); ctx.stroke();
+
+        // Hindwing discal cell — the enclosed region near the base
+        ctx.beginPath();
+        ctx.moveTo(hw*0.12, fh*0.20);
+        ctx.bezierCurveTo(hw*0.22, hh*0.32, hw*0.28, hh*0.38, hw*0.30, hh*0.44);
+        ctx.bezierCurveTo(hw*0.22, hh*0.46, hw*0.12, hh*0.40, hw*0.08, fh*0.30);
+        ctx.closePath();
+        ctx.fillStyle = `rgba(58,46,30,${0.06*alpha})`; ctx.fill();
+        ctx.strokeStyle = `rgba(58,46,30,${0.18*alpha})`; ctx.lineWidth = 0.6; ctx.stroke();
+
+        // Submarginal spots on hindwing — row of small ovals inside border
+        ctx.fillStyle = `rgba(58,46,30,${0.16*alpha})`;
+        const hwSpots = [
+          { x: hw*0.68, y: hh*0.30 },
+          { x: hw*0.80, y: hh*0.44 },
+          { x: hw*0.84, y: hh*0.60 },
+          { x: hw*0.72, y: hh*0.74 },
+        ];
+        for (const s of hwSpots) {
+          ctx.beginPath();
+          ctx.ellipse(s.x, s.y, 2.5, 2.0, 0, 0, Math.PI*2);
+          ctx.fill();
+        }
+
+        // Tail curl
+        setInk(1.0, alpha); ctx.lineWidth = 1.0;
         ctx.beginPath();
         ctx.moveTo(hw*0.6, hh*0.85);
         ctx.bezierCurveTo(hw*0.75, hh*1.0, hw*0.55, hh*1.15, hw*0.4, hh*1.0);
         ctx.stroke();
+
+        // ══ FOREWING (drawn on top of hindwing) ══
+
+        // Shape
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(fw*0.3, -fh*0.5, fw, -fh*0.8, fw, -fh*0.2);
+        ctx.bezierCurveTo(fw, fh*0.3, fw*0.4, fh*0.5, 0, fh*0.3);
+        ctx.closePath();
+        ctx.fillStyle = "#f3efe6"; ctx.fill();
+        setInk(1.1, alpha); ctx.stroke();
+
+        // Dark border band on forewing margin
+        ctx.save();
+        ctx.clip();
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(fw*0.3, -fh*0.5, fw, -fh*0.8, fw, -fh*0.2);
+        ctx.bezierCurveTo(fw, fh*0.3, fw*0.4, fh*0.5, 0, fh*0.3);
+        ctx.closePath();
+        ctx.strokeStyle = `rgba(58,46,30,${0.12*alpha})`;
+        ctx.lineWidth = 8;
+        ctx.stroke();
+        ctx.restore();
+
+        // Main forewing veins — 4 radiating from base
+        ctx.strokeStyle = `rgba(58,46,30,${0.24*alpha})`; ctx.lineWidth = 0.75;
+        // Costal vein (top)
+        ctx.beginPath();
+        ctx.moveTo(0, -2);
+        ctx.bezierCurveTo(fw*0.18, -fh*0.12, fw*0.55, -fh*0.42, fw*0.86, -fh*0.20);
+        ctx.stroke();
+        // Upper-mid vein
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(fw*0.16, -fh*0.04, fw*0.52, -fh*0.14, fw*0.84, fh*0.06);
+        ctx.stroke();
+        // Mid vein
+        ctx.beginPath();
+        ctx.moveTo(0, fh*0.08);
+        ctx.bezierCurveTo(fw*0.14, fh*0.16, fw*0.48, fh*0.28, fw*0.76, fh*0.28);
+        ctx.stroke();
+        // Lower vein
+        ctx.beginPath();
+        ctx.moveTo(0, fh*0.18);
+        ctx.bezierCurveTo(fw*0.10, fh*0.28, fw*0.34, fh*0.42, fw*0.54, fh*0.44);
+        ctx.stroke();
+
+        // Cross-veins (short connectors between main veins — window pane effect)
+        ctx.strokeStyle = `rgba(58,46,30,${0.14*alpha})`; ctx.lineWidth = 0.5;
+        // Inner cross-vein (forms the discal cell end)
+        ctx.beginPath();
+        ctx.moveTo(fw*0.30, -fh*0.26);
+        ctx.bezierCurveTo(fw*0.33, fh*0.00, fw*0.34, fh*0.20, fw*0.30, fh*0.35);
+        ctx.stroke();
+        // Outer cross-vein
+        ctx.beginPath();
+        ctx.moveTo(fw*0.58, -fh*0.18);
+        ctx.lineTo(fw*0.56, fh*0.10);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(fw*0.72, -fh*0.08);
+        ctx.lineTo(fw*0.70, fh*0.18);
+        ctx.stroke();
+
+        // Discal cell — shaded oval in the middle of the forewing
+        ctx.beginPath();
+        ctx.moveTo(fw*0.06, -fh*0.04);
+        ctx.bezierCurveTo(fw*0.14, -fh*0.12, fw*0.28, -fh*0.16, fw*0.30, -fh*0.04);
+        ctx.bezierCurveTo(fw*0.32, fh*0.08, fw*0.24, fh*0.22, fw*0.10, fh*0.18);
+        ctx.closePath();
+        ctx.fillStyle = `rgba(58,46,30,${0.07*alpha})`; ctx.fill();
+        ctx.strokeStyle = `rgba(58,46,30,${0.16*alpha})`; ctx.lineWidth = 0.6; ctx.stroke();
+
+        // Submarginal spot band — row of small ovals just inside the outer margin
+        ctx.fillStyle = `rgba(58,46,30,${0.15*alpha})`;
+        const fwSpots = [
+          { x: fw*0.70, y: -fh*0.50 },
+          { x: fw*0.80, y: -fh*0.32 },
+          { x: fw*0.86, y: -fh*0.10 },
+          { x: fw*0.84, y:  fh*0.12 },
+          { x: fw*0.74, y:  fh*0.30 },
+        ];
+        for (const s of fwSpots) {
+          ctx.beginPath();
+          ctx.ellipse(s.x, s.y, 2.8, 2.0,
+            Math.atan2(s.y + fh*0.1, s.x - fw*0.5) + Math.PI*0.5,
+            0, Math.PI*2);
+          ctx.fill();
+        }
+
+        // Apical patch — cluster of tiny spots near the wing tip
+        ctx.fillStyle = `rgba(58,46,30,${0.12*alpha})`;
+        for (const [dx, dy] of [[0,0],[5,-4],[9,-2],[7,4]]) {
+          ctx.beginPath();
+          ctx.arc(fw*0.82 + dx, -fh*0.52 + dy, 1.4, 0, Math.PI*2);
+          ctx.fill();
+        }
+
         ctx.restore();
       }
 
