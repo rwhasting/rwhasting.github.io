@@ -639,20 +639,24 @@
           break;
         }
 
-        // ── 3. Butterfly startled — darts away ──
+        // ── 3. Butterfly startled — darts off-screen ──
         case S.FLYING_AWAY: {
-          const dur = 2.5;
-          phase = Math.min(stateDuration/dur, 1);
-          const ease = phase<0.5 ? 2*phase*phase : 1-Math.pow(-2*phase+2,2)/2;
-          bfx = bfxStart + ease*W*0.65;
-          bfy = bfyStart - ease*H*0.5;
+          const dur = 2.8;
+          phase = stateDuration / dur; // unbounded — we exit on position, not time
+          const ease = phase < 0.5 ? 2*phase*phase : 1-Math.pow(-2*phase+2,2)/2;
+          // Fly far enough right and up to guarantee clearing the canvas
+          bfx = bfxStart + ease * (W - bfxStart + 120);
+          bfy = bfyStart - ease * (bfyStart + 120);
           drawFlower(flowerX, groundY);
-          // Caterpillar continues walking toward milkweed while butterfly flees
           catX = Math.min(catX + dt*42, milkweedX-30);
           catY = groundY-10;
           drawCaterpillar(catX, catY, walkPhase);
-          drawButterfly(bfx, bfy, wingBeat);
-          if (phase >= 1) {
+          // Only draw butterfly while it's still on-screen
+          if (bfx < W + 60 && bfy > -60) {
+            drawButterfly(bfx, bfy, wingBeat);
+          }
+          // Transition once it's fully off-screen
+          if (bfx >= W + 60 || bfy <= -60) {
             crawlStartX = catX;
             enterState(S.CRAWLING);
           }
