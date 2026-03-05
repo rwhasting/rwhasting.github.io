@@ -496,6 +496,93 @@
     }
     .chapters-backdrop.open { display: block; }
 
+    /* ── Bookmark dialog ── */
+    .bm-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(3px);
+    }
+
+    .bm-box {
+      background: var(--bg);
+      border: 1px solid rgba(200,130,10,0.25);
+      border-radius: 16px;
+      padding: 32px 28px 24px;
+      max-width: 400px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      font-family: var(--sans);
+    }
+
+    .bm-icon { font-size: 32px; }
+
+    .bm-title {
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--fg);
+      text-align: center;
+    }
+
+    .bm-body {
+      font-size: 13px;
+      color: var(--dim);
+      line-height: 1.7;
+      text-align: center;
+    }
+
+    .bm-body strong { color: var(--fg); }
+
+    .bm-body code {
+      font-family: ui-monospace, monospace;
+      font-size: 11px;
+      background: rgba(128,120,110,0.15);
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: var(--fg);
+    }
+
+    .bm-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .bm-cancel {
+      padding: 9px 20px;
+      border-radius: 8px;
+      border: 1px solid rgba(128,120,110,0.35);
+      background: none;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--dim);
+      font-family: var(--sans);
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .bm-cancel:hover { color: var(--fg); border-color: var(--fg); }
+
+    .bm-confirm {
+      padding: 9px 20px;
+      border-radius: 8px;
+      border: 1px solid var(--amber);
+      background: none;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--amber);
+      font-family: var(--sans);
+      transition: background 0.2s, color 0.2s;
+    }
+    .bm-confirm:hover { background: var(--amber); color: var(--bg); }
+
     @media (max-width: 600px) {
       .word-wrap { min-width: 0; width: 100%; }
       .wpm-slider { width: 80px; }
@@ -871,61 +958,25 @@
 
     // ── Bookmark dialog ──
     function showBookmarkDialog(pct, filename, onConfirm) {
-      // Create overlay
       const overlay = document.createElement('div');
-      overlay.style.cssText = `
-        position: fixed; inset: 0; z-index: 200;
-        background: rgba(0,0,0,0.55);
-        display: flex; align-items: center; justify-content: center;
-        padding: 20px;
-        backdrop-filter: blur(2px);
-      `;
+      overlay.className = 'bm-overlay';
 
       const box = document.createElement('div');
-      box.style.cssText = `
-        background: var(--bg);
-        border: 1px solid rgba(128,120,110,0.2);
-        border-radius: 16px;
-        padding: 28px;
-        max-width: 380px;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-        font-family: var(--sans);
-      `;
-
+      box.className = 'bm-box';
       box.innerHTML = `
-        <div style="font-size:28px; text-align:center;">🔖</div>
-        <div style="font-family:var(--serif); font-size:18px; font-weight:600;
-                    color:var(--fg); text-align:center;">Save your place?</div>
-        <div style="font-size:13px; color:var(--dim); line-height:1.6; text-align:center;">
+        <div class="bm-icon">🔖</div>
+        <div class="bm-title">Save your place?</div>
+        <div class="bm-body">
           This will download a small file called
-          <code style="font-family:ui-monospace,monospace; font-size:11px;
-                        background:rgba(128,120,110,0.12); padding:1px 5px;
-                        border-radius:3px; color:var(--fg);">${filename}</code>
-          marking your position at <strong style="color:var(--fg);">${pct}%</strong>
-          through the book.<br><br>
+          <code>${filename}</code>
+          marking your position at <strong>${pct}%</strong> through the book.
+          <br><br>
           Next time, upload this file alongside your book on the Library page
           to pick up right where you left off.
         </div>
-        <div style="display:flex; gap:10px; justify-content:center; margin-top:4px;">
-          <button id="bmCancel" style="
-            padding: 9px 20px; border-radius: 8px;
-            border: 1px solid rgba(128,120,110,0.3);
-            background: none; cursor: pointer;
-            font-size: 13px; color: var(--dim);
-            font-family: var(--sans);
-            transition: color 0.2s, border-color 0.2s;
-          ">Cancel</button>
-          <button id="bmConfirm" style="
-            padding: 9px 20px; border-radius: 8px;
-            border: 1px solid var(--amber);
-            background: none; cursor: pointer;
-            font-size: 13px; color: var(--amber);
-            font-family: var(--sans);
-            transition: background 0.2s, color 0.2s;
-          ">Download bookmark</button>
+        <div class="bm-buttons">
+          <button class="bm-cancel">Cancel</button>
+          <button class="bm-confirm">Download bookmark</button>
         </div>
       `;
 
@@ -934,14 +985,13 @@
 
       const close = () => document.body.removeChild(overlay);
 
-      box.querySelector('#bmCancel').addEventListener('click', close);
-      box.querySelector('#bmConfirm').addEventListener('click', () => {
+      box.querySelector('.bm-cancel').addEventListener('click', close);
+      box.querySelector('.bm-confirm').addEventListener('click', () => {
         close();
         onConfirm();
       });
       overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
 
-      // Keyboard: Escape to cancel, Enter to confirm
       const onKey = e => {
         if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); }
         if (e.key === 'Enter')  { close(); onConfirm(); document.removeEventListener('keydown', onKey); }
