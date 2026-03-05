@@ -1053,6 +1053,8 @@
           showWord();
           closeChapters();
           if (playing) { clearTimeout(timer); timer = setTimeout(tick, getDelay(false)); }
+          // Briefly reveal the topbar so the updated progress bar is visible
+          flashTopbar();
         });
         chaptersList.appendChild(item);
       });
@@ -1168,6 +1170,21 @@
 
     // Also stop hold if window loses focus
     window.addEventListener('blur', stopHold);
+
+    // Briefly force topbar and controls to full opacity so progress update is visible
+    function flashTopbar() {
+      const topbar   = document.querySelector('.topbar');
+      const progress = document.querySelector('.progress-track');
+      [topbar, progress].forEach(el => {
+        if (!el) return;
+        el.style.transition = 'opacity 0s';
+        el.style.opacity    = '1';
+        setTimeout(() => {
+          el.style.transition = '';
+          el.style.opacity    = '';
+        }, 1200);
+      });
+    }
 
     function escHtml(s) {
       return String(s)
