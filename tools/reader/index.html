@@ -252,6 +252,78 @@
     .book-card:hover .book-remove { opacity: 1; }
     .book-remove:hover { background: #fee; color: #c00; }
 
+    /* ── Bookmark nudge ── */
+    .bookmark-nudge {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--dim);
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .nudge-icon { font-size: 14px; }
+
+    .nudge-link {
+      color: var(--amber);
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      transition: opacity 0.2s;
+    }
+    .nudge-link:hover { opacity: 0.75; }
+
+    .nudge-status {
+      font-style: italic;
+      color: var(--amber);
+      font-size: 12px;
+    }
+
+    /* ── Bookmark info ── */
+    .bookmark-info {
+      width: 100%;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: #fdf8f0;
+      border: 1px solid #e8dfc8;
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+
+    .bookmark-info-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .bookmark-info-text {
+      font-size: 13px;
+      color: var(--dim);
+      line-height: 1.6;
+    }
+
+    .bookmark-info-text strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .bookmark-info-text em {
+      font-style: normal;
+      color: var(--amber);
+    }
+
+    .bookmark-info-text code {
+      font-family: ui-monospace, monospace;
+      font-size: 11px;
+      background: #f0e8d8;
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: var(--ink);
+    }
+
     /* ── Footer ── */
     .footer {
       font-size: 11px;
@@ -295,8 +367,26 @@
       <div class="upload-title">Drop a book here</div>
       <div class="upload-sub">
         Supports <em>.txt</em> and <em>.epub</em><br>
-        Plain text files from Project Gutenberg work best.<br>
-        Drop a <em>.rsvp</em> bookmark alongside your book to resume where you left off.
+        Plain text files from Project Gutenberg work best.
+      </div>
+    </div>
+
+    <!-- Bookmark nudge -->
+    <div class="bookmark-nudge" id="bookmarkNudge">
+      <span class="nudge-icon">🔖</span>
+      Resuming a book?
+      <label for="bookmarkInput" class="nudge-link">Drop your bookmark file here too</label>
+      <input type="file" id="bookmarkInput" accept=".rsvp" style="display:none" />
+      <span class="nudge-status" id="nudgeStatus"></span>
+    </div>
+
+    <!-- Bookmark explanation -->
+    <div class="bookmark-info">
+      <div class="bookmark-info-icon">🔖</div>
+      <div class="bookmark-info-text">
+        <strong>Saving your place</strong><br>
+        While reading, hit the <em>Bookmark</em> button to download a small <code>.rsvp</code> file.
+        Next time, upload your book and that file together — the reader will pick up exactly where you left off.
       </div>
     </div>
 
@@ -345,6 +435,17 @@
       uploadZone.classList.remove('dragover');
       [...e.dataTransfer.files].forEach(handleFile);
     });
+    // Dedicated bookmark input (nudge)
+    const bookmarkInput = document.getElementById('bookmarkInput');
+    const nudgeStatus   = document.getElementById('nudgeStatus');
+    bookmarkInput.addEventListener('change', async () => {
+      if (bookmarkInput.files[0]) {
+        await handleFile(bookmarkInput.files[0]);
+        bookmarkInput.value = '';
+        if (pendingBookmark) nudgeStatus.textContent = '✓ Bookmark ready';
+      }
+    });
+
     fileInput.addEventListener('change', () => {
       [...fileInput.files].forEach(handleFile);
       fileInput.value = '';
