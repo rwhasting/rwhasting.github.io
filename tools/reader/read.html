@@ -580,7 +580,37 @@
     }
     .bm-confirm:hover { background: var(--amber); color: var(--bg); }
 
+    /* ── Keyboard hints ── */
+    .kbd-hints {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 11px;
+      color: var(--dim);
+      letter-spacing: 0.03em;
+    }
+
+    .kbd-hints span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    kbd {
+      display: inline-block;
+      font-family: ui-monospace, monospace;
+      font-size: 10px;
+      color: var(--dim);
+      border: 1px solid rgba(128,120,110,0.35);
+      border-radius: 4px;
+      padding: 1px 5px;
+      line-height: 1.6;
+    }
+
     @media (max-width: 600px) {
+      .kbd-hints { gap: 12px; }
       .word-wrap { min-width: 0; width: 100%; }
       .wpm-slider { width: 80px; }
       .controls-row { gap: 10px; }
@@ -683,9 +713,17 @@
         <div class="wpm-group">
           <span class="wpm-label">Speed</span>
           <input type="range" class="wpm-slider" id="wpmSlider"
-            min="100" max="1000" step="25" value="300" />
+            min="100" max="500" step="25" value="300" />
           <span class="wpm-value" id="wpmValue">300 wpm</span>
         </div>
+      </div>
+
+      <!-- Keyboard hints -->
+      <div class="kbd-hints">
+        <span><kbd>Space</kbd> play / pause</span>
+        <span><kbd>←</kbd> <kbd>→</kbd> word · hold to scroll</span>
+        <span><kbd>⇧←</kbd> <kbd>⇧→</kbd> sentence</span>
+        <span><kbd>↑</kbd> <kbd>↓</kbd> speed</span>
       </div>
     </div>
 
@@ -1043,21 +1081,76 @@
     chaptersBackdrop.addEventListener('click', closeChapters);
 
     // ── Keyboard shortcuts ──
+    // ── Hold-to-scroll state ──
+    // Holding ← or → while paused auto-scrolls at increasing speed up to 500 wpm.
+    // Speed ramps up the longer the key is held: starts at 120 wpm, accelerates
+    // to 500 wpm over ~2 seconds, then stays there until key is released.
+    const HOLD_MAX_WPM   = 500;
+    const HOLD_START_WPM = 120;
+    const HOLD_RAMP_MS   = 2000; // time to reach max speed
+
+    let holdKey       = null;   // 'ArrowLeft' | 'ArrowRight' | null
+    let holdStartTime = null;
+    let holdTimer     = null;
+
+    function holdScrollDelay() {
+      const elapsed = Date.now() - holdStartTime;
+      const t       = Math.min(elapsed / HOLD_RAMP_MS, 1); // 0→1 over ramp period
+      // Ease in: starts slow, accelerates
+      const eased   = t * t;
+      const hwpm    = HOLD_START_WPM + eased * (HOLD_MAX_WPM - HOLD_START_WPM);
+      return 60000 / hwpm;
+    }
+
+    function holdScrollStep() {
+      if (!holdKey || playing) return;
+      if (holdKey === 'ArrowRight') {
+        pos = Math.min(words.length - 1, pos + 1);
+      } else {
+        pos = Math.max(0, pos - 1);
+      }
+      showWord();
+      holdTimer = setTimeout(holdScrollStep, holdScrollDelay());
+    }
+
+    function startHold(key) {
+      if (holdKey === key) return; // already holding
+      stopHold();
+      holdKey       = key;
+      holdStartTime = Date.now();
+      // Small initial delay before auto-scroll kicks in (feels more intentional)
+      holdTimer = setTimeout(holdScrollStep, 350);
+    }
+
+    function stopHold() {
+      holdKey = null;
+      holdStartTime = null;
+      clearTimeout(holdTimer);
+      holdTimer = null;
+    }
+
     document.addEventListener('keydown', e => {
       if (e.target.tagName === 'INPUT') return;
       switch(e.key) {
         case ' ':
           e.preventDefault();
+          stopHold();
           togglePlay();
           break;
         case 'ArrowLeft':
-          e.shiftKey ? prevSentence() : prevWord();
+          e.preventDefault();
+          if (e.shiftKey) { prevSentence(); break; }
+          if (!playing) startHold('ArrowLeft');
+          else prevWord();
           break;
         case 'ArrowRight':
-          e.shiftKey ? nextSentence() : nextWord();
+          e.preventDefault();
+          if (e.shiftKey) { nextSentence(); break; }
+          if (!playing) startHold('ArrowRight');
+          else nextWord();
           break;
         case 'ArrowUp':
-          wpm = Math.min(1000, wpm + 25);
+          wpm = Math.min(500, wpm + 25);
           wpmSlider.value = wpm;
           wpmValue.textContent = wpm + ' wpm';
           break;
@@ -1068,6 +1161,13 @@
           break;
       }
     });
+
+    document.addEventListener('keyup', e => {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') stopHold();
+    });
+
+    // Also stop hold if window loses focus
+    window.addEventListener('blur', stopHold);
 
     function escHtml(s) {
       return String(s)
