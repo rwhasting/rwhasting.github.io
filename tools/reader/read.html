@@ -1,0 +1,947 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reader — Ryan's Workshop</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-dark:    #111010;
+      --bg-light:   #f5f1eb;
+      --fg-dark:    #e8e2d8;
+      --fg-light:   #1a1714;
+      --dim-dark:   #5a5550;
+      --dim-light:  #9a9490;
+      --amber:      #c8820a;
+      --amber-dim:  #7a5005;
+      --serif:      'Lora', Georgia, serif;
+      --sans:       'Inter', system-ui, sans-serif;
+
+      --bg:   var(--bg-dark);
+      --fg:   var(--fg-dark);
+      --dim:  var(--dim-dark);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--sans);
+      transition: background 0.3s, color 0.3s;
+      overflow: hidden;
+    }
+
+    body.light {
+      --bg:  var(--bg-light);
+      --fg:  var(--fg-light);
+      --dim: var(--dim-light);
+    }
+
+    /* ── Layout ── */
+    .shell {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      height: 100vh;
+      width: 100%;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      opacity: 0.4;
+      transition: opacity 0.3s;
+      gap: 12px;
+    }
+
+    .topbar:hover { opacity: 1; }
+
+    .topbar-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .book-title-bar {
+      font-family: var(--serif);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--fg);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 280px;
+    }
+
+    .book-author-bar {
+      font-size: 11px;
+      color: var(--dim);
+      font-style: italic;
+      font-family: var(--serif);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .icon-btn {
+      background: none;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 5px 8px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--dim);
+      transition: color 0.2s, border-color 0.2s;
+      white-space: nowrap;
+    }
+    .icon-btn:hover { color: var(--fg); border-color: var(--dim); }
+
+    .back-link {
+      text-decoration: none;
+      font-size: 12px;
+      color: var(--dim);
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--amber); }
+
+    /* ── Progress bar ── */
+    .progress-track {
+      width: 100%;
+      height: 2px;
+      background: rgba(128,120,110,0.15);
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--amber);
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    .progress-label {
+      position: absolute;
+      right: 12px;
+      top: 4px;
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Stage — the main reading area ── */
+    .stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 20px;
+      user-select: none;
+    }
+
+    /* ORP focal guide — subtle vertical tick marks */
+    .orp-guide {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      pointer-events: none;
+    }
+
+    .orp-tick {
+      width: 1px;
+      height: 8px;
+      background: var(--amber);
+      opacity: 0.5;
+      border-radius: 1px;
+    }
+
+    /* Word display */
+    .word-wrap {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      min-width: 520px;
+      max-width: 90vw;
+      position: relative;
+    }
+
+    .word-before {
+      font-family: var(--serif);
+      font-size: clamp(32px, 5vw, 52px);
+      color: var(--fg);
+      text-align: right;
+      flex: 1;
+      line-height: 1.2;
+      letter-spacing: 0.01em;
+    }
+
+    .word-orp {
+      font-family: var(--serif);
+      font-size: clamp(32px, 5vw, 52px);
+      color: var(--amber);
+      line-height: 1.2;
+      letter-spacing: 0.01em;
+      position: relative;
+    }
+
+    .word-after {
+      font-family: var(--serif);
+      font-size: clamp(32px, 5vw, 52px);
+      color: var(--fg);
+      text-align: left;
+      flex: 1;
+      line-height: 1.2;
+      letter-spacing: 0.01em;
+    }
+
+    /* ORP ticks above and below the focal letter */
+    .word-orp::before,
+    .word-orp::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1px;
+      background: var(--amber);
+      opacity: 0.35;
+    }
+    .word-orp::before { top: -14px; height: 8px; }
+    .word-orp::after  { bottom: -14px; height: 8px; }
+
+    /* Context line — shows surrounding words faintly */
+    .context-line {
+      font-family: var(--serif);
+      font-size: clamp(12px, 1.8vw, 15px);
+      color: var(--dim);
+      margin-top: 32px;
+      text-align: center;
+      max-width: 600px;
+      line-height: 1.6;
+      min-height: 1.6em;
+      font-style: italic;
+      opacity: 0.6;
+    }
+
+    .context-line .current-word {
+      color: var(--fg);
+      opacity: 1;
+      font-style: normal;
+    }
+
+    /* Paused overlay */
+    .pause-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .pause-overlay.visible { opacity: 1; }
+
+    .pause-hint {
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    /* Done state */
+    .done-msg {
+      text-align: center;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .done-msg.visible { display: flex; }
+
+    .done-title {
+      font-family: var(--serif);
+      font-size: 24px;
+      font-style: italic;
+      color: var(--fg);
+    }
+
+    .done-sub {
+      font-size: 13px;
+      color: var(--dim);
+    }
+
+    .done-btn {
+      margin-top: 8px;
+      padding: 10px 24px;
+      background: none;
+      border: 1px solid var(--dim);
+      border-radius: 8px;
+      color: var(--fg);
+      font-size: 13px;
+      cursor: pointer;
+      font-family: var(--sans);
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .done-btn:hover { border-color: var(--amber); color: var(--amber); }
+
+    /* No book state */
+    .no-book {
+      text-align: center;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .no-book.visible { display: flex; }
+    .no-book-title { font-family: var(--serif); font-size: 20px; font-style: italic; color: var(--fg); }
+    .no-book-sub { font-size: 13px; color: var(--dim); }
+
+    /* ── Bottom controls ── */
+    .controls {
+      padding: 14px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      opacity: 0.35;
+      transition: opacity 0.3s;
+    }
+
+    .controls:hover { opacity: 1; }
+
+    .controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* Play/pause button */
+    .play-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--dim);
+      background: none;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--fg);
+      transition: border-color 0.2s, transform 0.1s;
+      flex-shrink: 0;
+    }
+    .play-btn:hover { border-color: var(--amber); transform: scale(1.05); }
+    .play-btn:active { transform: scale(0.95); }
+
+    /* Skip buttons */
+    .skip-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--dim);
+      padding: 4px;
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+    }
+    .skip-btn:hover { color: var(--fg); }
+
+    /* WPM control */
+    .wpm-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .wpm-label {
+      font-size: 11px;
+      color: var(--dim);
+      letter-spacing: 0.08em;
+      min-width: 60px;
+      text-align: right;
+    }
+
+    .wpm-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 120px;
+      height: 2px;
+      background: var(--dim);
+      border-radius: 1px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .wpm-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--amber);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .wpm-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+    .wpm-slider::-moz-range-thumb {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--amber);
+      border: none;
+      cursor: pointer;
+    }
+
+    .wpm-value {
+      font-size: 12px;
+      color: var(--fg);
+      min-width: 52px;
+      letter-spacing: 0.03em;
+    }
+
+    /* Chapters panel */
+    .chapters-panel {
+      position: fixed;
+      top: 0; right: 0;
+      width: min(320px, 90vw);
+      height: 100vh;
+      background: var(--bg);
+      border-left: 1px solid rgba(128,120,110,0.15);
+      padding: 24px 0;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chapters-panel.open { transform: translateX(0); }
+
+    .chapters-header {
+      padding: 0 20px 16px;
+      border-bottom: 1px solid rgba(128,120,110,0.15);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chapters-title {
+      font-family: var(--serif);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--fg);
+    }
+
+    .chapters-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--dim);
+      padding: 4px;
+      transition: color 0.2s;
+    }
+    .chapters-close:hover { color: var(--fg); }
+
+    .chapters-list {
+      overflow-y: auto;
+      flex: 1;
+      padding: 8px 0;
+    }
+
+    .chapter-item {
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--dim);
+      transition: color 0.2s, background 0.2s;
+      line-height: 1.4;
+      font-family: var(--serif);
+    }
+    .chapter-item:hover { color: var(--fg); background: rgba(128,120,110,0.06); }
+    .chapter-item.active { color: var(--amber); }
+
+    .chapter-item-num {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 2px;
+      font-family: var(--sans);
+    }
+
+    .chapters-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 99;
+    }
+    .chapters-backdrop.open { display: block; }
+
+    @media (max-width: 600px) {
+      .word-wrap { min-width: 0; width: 100%; }
+      .wpm-slider { width: 80px; }
+      .controls-row { gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+
+    <!-- Top bar -->
+    <div>
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="book-title-bar" id="bookTitleBar">—</div>
+          <div class="book-author-bar" id="bookAuthorBar"></div>
+        </div>
+        <div class="topbar-right">
+          <button class="icon-btn" id="chaptersBtn">☰ Chapters</button>
+          <button class="icon-btn" id="bookmarkBtn" title="Save your place">🔖 Bookmark</button>
+          <button class="icon-btn" id="themeBtn">◑</button>
+          <a href="/tools/reader/" class="back-link">← Library</a>
+        </div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <!-- Stage -->
+    <div class="stage" id="stage">
+
+      <!-- No book loaded -->
+      <div class="no-book" id="noBook">
+        <div class="no-book-title">No book loaded.</div>
+        <div class="no-book-sub">Go back to the library and select a book.</div>
+        <a href="/tools/reader/" style="margin-top:8px; font-size:13px; color:var(--amber);">← Back to Library</a>
+      </div>
+
+      <!-- Reading view -->
+      <div id="readingView" style="display:none; flex-direction:column; align-items:center;">
+        <div class="word-wrap" id="wordWrap">
+          <div class="word-before" id="wordBefore"></div>
+          <div class="word-orp"    id="wordOrp"></div>
+          <div class="word-after"  id="wordAfter"></div>
+        </div>
+        <div class="context-line" id="contextLine"></div>
+      </div>
+
+      <!-- Finished -->
+      <div class="done-msg" id="doneMsg">
+        <div class="done-title">The end.</div>
+        <div class="done-sub" id="doneSub"></div>
+        <button class="done-btn" id="restartBtn">Read again</button>
+        <a href="/tools/reader/" style="font-size:13px; color:var(--dim);">← Back to Library</a>
+      </div>
+
+      <!-- Pause hint -->
+      <div class="pause-overlay" id="pauseOverlay">
+        <div class="pause-hint">Paused — press Space to continue</div>
+      </div>
+
+    </div>
+
+    <!-- Bottom controls -->
+    <div class="controls" id="controls" style="display:none;">
+      <div class="controls-row">
+        <!-- Back sentence -->
+        <button class="skip-btn" id="prevSentenceBtn" title="Back a sentence (←)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M13 4L7 10l6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="4" y1="4" x2="4" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+
+        <!-- Back word -->
+        <button class="skip-btn" id="prevWordBtn" title="Back a word">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M12 4L6 10l6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <!-- Play/Pause -->
+        <button class="play-btn" id="playBtn">▶</button>
+
+        <!-- Forward word -->
+        <button class="skip-btn" id="nextWordBtn" title="Forward a word">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M8 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <!-- Forward sentence -->
+        <button class="skip-btn" id="nextSentenceBtn" title="Forward a sentence (→)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M7 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="16" y1="4" x2="16" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+
+        <div class="wpm-group">
+          <span class="wpm-label">Speed</span>
+          <input type="range" class="wpm-slider" id="wpmSlider"
+            min="100" max="1000" step="25" value="300" />
+          <span class="wpm-value" id="wpmValue">300 wpm</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Chapters panel -->
+  <div class="chapters-backdrop" id="chaptersBackdrop"></div>
+  <div class="chapters-panel" id="chaptersPanel">
+    <div class="chapters-header">
+      <span class="chapters-title">Chapters</span>
+      <button class="chapters-close" id="chaptersClose">✕</button>
+    </div>
+    <div class="chapters-list" id="chaptersList"></div>
+  </div>
+
+  <script>
+    // ── Load book from sessionStorage ──
+    let book = null;
+    try {
+      const raw = sessionStorage.getItem('rsvp_book');
+      if (raw) book = JSON.parse(raw);
+    } catch(e) {}
+
+    // ── State ──
+    let words    = [];
+    let chapters = [];
+    let pos      = 0;       // current word index
+    let playing  = false;
+    let timer    = null;
+    let wpm      = 300;
+    let isDark   = true;
+
+    // ── Elements ──
+    const bookTitleBar   = document.getElementById('bookTitleBar');
+    const bookAuthorBar  = document.getElementById('bookAuthorBar');
+    const progressFill   = document.getElementById('progressFill');
+    const noBook         = document.getElementById('noBook');
+    const readingView    = document.getElementById('readingView');
+    const wordBefore     = document.getElementById('wordBefore');
+    const wordOrp        = document.getElementById('wordOrp');
+    const wordAfter      = document.getElementById('wordAfter');
+    const contextLine    = document.getElementById('contextLine');
+    const doneMsg        = document.getElementById('doneMsg');
+    const doneSub        = document.getElementById('doneSub');
+    const restartBtn     = document.getElementById('restartBtn');
+    const pauseOverlay   = document.getElementById('pauseOverlay');
+    const controls       = document.getElementById('controls');
+    const playBtn        = document.getElementById('playBtn');
+    const wpmSlider      = document.getElementById('wpmSlider');
+    const wpmValue       = document.getElementById('wpmValue');
+    const chaptersBtn    = document.getElementById('chaptersBtn');
+    const chaptersPanel  = document.getElementById('chaptersPanel');
+    const chaptersBackdrop = document.getElementById('chaptersBackdrop');
+    const chaptersClose  = document.getElementById('chaptersClose');
+    const chaptersList   = document.getElementById('chaptersList');
+    const themeBtn       = document.getElementById('themeBtn');
+    const prevWordBtn    = document.getElementById('prevWordBtn');
+    const nextWordBtn    = document.getElementById('nextWordBtn');
+    const prevSentenceBtn = document.getElementById('prevSentenceBtn');
+    const nextSentenceBtn = document.getElementById('nextSentenceBtn');
+
+    // ── Init ──
+    if (book) {
+      words    = book.words;
+      chapters = book.chapters;
+      bookTitleBar.textContent  = book.title;
+      bookAuthorBar.textContent = book.author;
+      // Resume from bookmark if provided
+      if (book.resumeAt && book.resumeAt > 0 && book.resumeAt < words.length) {
+        pos = book.resumeAt;
+      }
+      noBook.classList.remove('visible');
+      readingView.style.display = 'flex';
+      controls.style.display    = 'block';
+      renderChapters();
+      showWord();
+    } else {
+      noBook.classList.add('visible');
+    }
+
+    // ── ORP calculation ──
+    // The optimal recognition point is roughly 30% into the word,
+    // biased left for short words and right for longer ones.
+    function getOrpIndex(word) {
+      const len = word.length;
+      if (len <= 1)  return 0;
+      if (len <= 5)  return 1;
+      if (len <= 9)  return 2;
+      if (len <= 13) return 3;
+      return 4;
+    }
+
+    // ── Display a word ──
+    function showWord(idx) {
+      if (idx !== undefined) pos = idx;
+      if (pos >= words.length) { showDone(); return; }
+
+      const raw  = words[pos];
+      const word = raw.replace(/^["'""''«»()\[\]{}]+|["'""''«»()\[\]{}]+$/g, '');
+      const orpI = getOrpIndex(word);
+
+      wordBefore.textContent = word.substring(0, orpI);
+      wordOrp.textContent    = word.charAt(orpI) || '';
+      wordAfter.textContent  = word.substring(orpI + 1);
+
+      // Context: 4 words before and after
+      const ctx = words.slice(Math.max(0, pos-4), pos+5);
+      const ctxHtml = ctx.map((w, i) => {
+        const globalIdx = Math.max(0, pos-4) + i;
+        return globalIdx === pos
+          ? `<span class="current-word">${escHtml(w)}</span>`
+          : escHtml(w);
+      }).join(' ');
+      contextLine.innerHTML = ctxHtml;
+
+      // Progress
+      const pct = words.length > 1 ? (pos / (words.length - 1)) * 100 : 0;
+      progressFill.style.width = pct + '%';
+
+      // Highlight active chapter
+      highlightCurrentChapter();
+
+      // Extra pause for punctuation (end of sentence feels natural)
+      return endsWithPunctuation(raw);
+    }
+
+    function endsWithPunctuation(w) {
+      return /[.!?…]/.test(w);
+    }
+
+    // ── Playback ──
+    function getDelay(isPunct) {
+      const base = 60000 / wpm;
+      // Slow slightly on long words, pause longer on sentence ends
+      const word = words[pos] || '';
+      const extra = word.length > 8 ? base * 0.15 : 0;
+      const punct = isPunct ? base * 0.6 : 0;
+      return base + extra + punct;
+    }
+
+    function tick() {
+      const isPunct = showWord();
+      pos++;
+      if (pos >= words.length) {
+        playing = false;
+        playBtn.textContent = '▶';
+        showDone();
+        return;
+      }
+      timer = setTimeout(tick, getDelay(isPunct));
+    }
+
+    function play() {
+      if (pos >= words.length) { pos = 0; showWord(); }
+      playing = true;
+      playBtn.textContent = '⏸';
+      pauseOverlay.classList.remove('visible');
+      doneMsg.classList.remove('visible');
+      readingView.style.display = 'flex';
+      timer = setTimeout(tick, getDelay(false));
+    }
+
+    function pause() {
+      playing = false;
+      playBtn.textContent = '▶';
+      clearTimeout(timer);
+      pauseOverlay.classList.add('visible');
+    }
+
+    function togglePlay() {
+      if (playing) pause(); else play();
+    }
+
+    function showDone() {
+      pause();
+      readingView.style.display = 'none';
+      doneMsg.classList.add('visible');
+      const mins = Math.round(words.length / wpm);
+      doneSub.textContent = `${words.length.toLocaleString()} words at ${wpm} wpm.`;
+    }
+
+    restartBtn.addEventListener('click', () => {
+      pos = 0;
+      doneMsg.classList.remove('visible');
+      readingView.style.display = 'flex';
+      showWord();
+      play();
+    });
+
+    // ── Skip controls ──
+    function prevWord() {
+      pause();
+      pos = Math.max(0, pos - 1);
+      showWord();
+    }
+
+    function nextWord() {
+      pause();
+      pos = Math.min(words.length - 1, pos + 1);
+      showWord();
+    }
+
+    function prevSentence() {
+      pause();
+      // Walk back to find previous sentence boundary
+      let i = pos - 2;
+      while (i > 0 && !endsWithPunctuation(words[i])) i--;
+      pos = Math.max(0, i + 1);
+      showWord();
+    }
+
+    function nextSentence() {
+      pause();
+      let i = pos;
+      while (i < words.length - 1 && !endsWithPunctuation(words[i])) i++;
+      pos = Math.min(words.length - 1, i + 1);
+      showWord();
+    }
+
+    prevWordBtn.addEventListener('click', prevWord);
+    nextWordBtn.addEventListener('click', nextWord);
+    prevSentenceBtn.addEventListener('click', prevSentence);
+    nextSentenceBtn.addEventListener('click', nextSentence);
+    playBtn.addEventListener('click', togglePlay);
+
+    // ── WPM slider ──
+    wpmSlider.addEventListener('input', () => {
+      wpm = parseInt(wpmSlider.value);
+      wpmValue.textContent = wpm + ' wpm';
+    });
+
+    // ── Theme toggle ──
+    themeBtn.addEventListener('click', () => {
+      isDark = !isDark;
+      document.body.classList.toggle('light', !isDark);
+    });
+
+    // ── Bookmark ──
+    const bookmarkBtn = document.getElementById('bookmarkBtn');
+    bookmarkBtn.addEventListener('click', () => {
+      if (!book) return;
+      const bm = {
+        title:     book.title,
+        author:    book.author,
+        wordIndex: pos,
+        wordCount: words.length,
+        savedAt:   new Date().toISOString(),
+        pct:       Math.round((pos / Math.max(1, words.length - 1)) * 100),
+      };
+      const blob = new Blob([JSON.stringify(bm, null, 2)], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      // Filename: title-slugified.rsvp
+      const slug = book.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g,'');
+      a.href     = url;
+      a.download = slug + '.rsvp';
+      a.click();
+      URL.revokeObjectURL(url);
+      // Brief visual feedback
+      bookmarkBtn.textContent = '✓ Saved';
+      setTimeout(() => { bookmarkBtn.textContent = '🔖 Bookmark'; }, 1800);
+    });
+
+    // ── Chapters ──
+    function renderChapters() {
+      chaptersList.innerHTML = '';
+      if (!chapters.length) {
+        chaptersList.innerHTML = '<div style="padding:16px 20px; font-size:13px; color:var(--dim); font-style:italic;">No chapters detected.</div>';
+        return;
+      }
+      chapters.forEach((ch, i) => {
+        const item = document.createElement('div');
+        item.className = 'chapter-item';
+        item.innerHTML = `
+          <div class="chapter-item-num">Chapter ${i + 1}</div>
+          <div>${escHtml(ch.title)}</div>
+        `;
+        item.addEventListener('click', () => {
+          pos = ch.wordIndex;
+          showWord();
+          closeChapters();
+          if (playing) { clearTimeout(timer); timer = setTimeout(tick, getDelay(false)); }
+        });
+        chaptersList.appendChild(item);
+      });
+    }
+
+    function highlightCurrentChapter() {
+      const items = chaptersList.querySelectorAll('.chapter-item');
+      let active = 0;
+      for (let i = 0; i < chapters.length; i++) {
+        if (pos >= chapters[i].wordIndex) active = i;
+      }
+      items.forEach((el, i) => el.classList.toggle('active', i === active));
+    }
+
+    function openChapters()  {
+      chaptersPanel.classList.add('open');
+      chaptersBackdrop.classList.add('open');
+    }
+    function closeChapters() {
+      chaptersPanel.classList.remove('open');
+      chaptersBackdrop.classList.remove('open');
+    }
+
+    chaptersBtn.addEventListener('click', openChapters);
+    chaptersClose.addEventListener('click', closeChapters);
+    chaptersBackdrop.addEventListener('click', closeChapters);
+
+    // ── Keyboard shortcuts ──
+    document.addEventListener('keydown', e => {
+      if (e.target.tagName === 'INPUT') return;
+      switch(e.key) {
+        case ' ':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'ArrowLeft':
+          e.shiftKey ? prevSentence() : prevWord();
+          break;
+        case 'ArrowRight':
+          e.shiftKey ? nextSentence() : nextWord();
+          break;
+        case 'ArrowUp':
+          wpm = Math.min(1000, wpm + 25);
+          wpmSlider.value = wpm;
+          wpmValue.textContent = wpm + ' wpm';
+          break;
+        case 'ArrowDown':
+          wpm = Math.max(100, wpm - 25);
+          wpmSlider.value = wpm;
+          wpmValue.textContent = wpm + ' wpm';
+          break;
+      }
+    });
+
+    function escHtml(s) {
+      return String(s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+  </script>
+</body>
+</html>
