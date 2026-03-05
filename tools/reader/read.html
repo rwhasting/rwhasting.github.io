@@ -242,23 +242,20 @@
       font-style: normal;
     }
 
-    /* Paused overlay */
+    /* Paused indicator — sits above the word display, not overlapping */
     .pause-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.3s;
+      text-align: center;
+      margin-bottom: 40px;
     }
 
     .pause-overlay.visible { opacity: 1; }
 
     .pause-hint {
-      font-size: 12px;
-      letter-spacing: 0.2em;
+      font-size: 11px;
+      letter-spacing: 0.22em;
       text-transform: uppercase;
       color: var(--dim);
     }
@@ -623,6 +620,11 @@
       </div>
 
       <!-- Reading view -->
+      <!-- Pause indicator — above the word, never overlapping -->
+      <div class="pause-overlay" id="pauseOverlay">
+        <div class="pause-hint">Paused — Space to resume · ← → to navigate</div>
+      </div>
+
       <div id="readingView" style="display:none; flex-direction:column; align-items:center;">
         <div class="word-wrap" id="wordWrap">
           <div class="word-before" id="wordBefore"></div>
@@ -638,11 +640,6 @@
         <div class="done-sub" id="doneSub"></div>
         <button class="done-btn" id="restartBtn">Read again</button>
         <a href="/tools/reader/" style="font-size:13px; color:var(--dim);">← Back to Library</a>
-      </div>
-
-      <!-- Pause hint -->
-      <div class="pause-overlay" id="pauseOverlay">
-        <div class="pause-hint">Paused — press Space to continue</div>
       </div>
 
     </div>
