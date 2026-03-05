@@ -843,27 +843,111 @@
     const bookmarkBtn = document.getElementById('bookmarkBtn');
     bookmarkBtn.addEventListener('click', () => {
       if (!book) return;
-      const bm = {
-        title:     book.title,
-        author:    book.author,
-        wordIndex: pos,
-        wordCount: words.length,
-        savedAt:   new Date().toISOString(),
-        pct:       Math.round((pos / Math.max(1, words.length - 1)) * 100),
-      };
-      const blob = new Blob([JSON.stringify(bm, null, 2)], { type: 'application/json' });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      // Filename: title-slugified.rsvp
+      const pct  = Math.round((pos / Math.max(1, words.length - 1)) * 100);
       const slug = book.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g,'');
-      a.href     = url;
-      a.download = slug + '.rsvp';
-      a.click();
-      URL.revokeObjectURL(url);
-      // Brief visual feedback
-      bookmarkBtn.textContent = '✓ Saved';
-      setTimeout(() => { bookmarkBtn.textContent = '🔖 Bookmark'; }, 1800);
+      const filename = slug + '.rsvp';
+
+      // Show confirmation dialog before downloading
+      showBookmarkDialog(pct, filename, () => {
+        const bm = {
+          title:     book.title,
+          author:    book.author,
+          wordIndex: pos,
+          wordCount: words.length,
+          savedAt:   new Date().toISOString(),
+          pct,
+        };
+        const blob = new Blob([JSON.stringify(bm, null, 2)], { type: 'application/json' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        bookmarkBtn.textContent = '✓ Saved';
+        setTimeout(() => { bookmarkBtn.textContent = '🔖 Bookmark'; }, 1800);
+      });
     });
+
+    // ── Bookmark dialog ──
+    function showBookmarkDialog(pct, filename, onConfirm) {
+      // Create overlay
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed; inset: 0; z-index: 200;
+        background: rgba(0,0,0,0.55);
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px;
+        backdrop-filter: blur(2px);
+      `;
+
+      const box = document.createElement('div');
+      box.style.cssText = `
+        background: var(--bg);
+        border: 1px solid rgba(128,120,110,0.2);
+        border-radius: 16px;
+        padding: 28px;
+        max-width: 380px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        font-family: var(--sans);
+      `;
+
+      box.innerHTML = `
+        <div style="font-size:28px; text-align:center;">🔖</div>
+        <div style="font-family:var(--serif); font-size:18px; font-weight:600;
+                    color:var(--fg); text-align:center;">Save your place?</div>
+        <div style="font-size:13px; color:var(--dim); line-height:1.6; text-align:center;">
+          This will download a small file called
+          <code style="font-family:ui-monospace,monospace; font-size:11px;
+                        background:rgba(128,120,110,0.12); padding:1px 5px;
+                        border-radius:3px; color:var(--fg);">${filename}</code>
+          marking your position at <strong style="color:var(--fg);">${pct}%</strong>
+          through the book.<br><br>
+          Next time, upload this file alongside your book on the Library page
+          to pick up right where you left off.
+        </div>
+        <div style="display:flex; gap:10px; justify-content:center; margin-top:4px;">
+          <button id="bmCancel" style="
+            padding: 9px 20px; border-radius: 8px;
+            border: 1px solid rgba(128,120,110,0.3);
+            background: none; cursor: pointer;
+            font-size: 13px; color: var(--dim);
+            font-family: var(--sans);
+            transition: color 0.2s, border-color 0.2s;
+          ">Cancel</button>
+          <button id="bmConfirm" style="
+            padding: 9px 20px; border-radius: 8px;
+            border: 1px solid var(--amber);
+            background: none; cursor: pointer;
+            font-size: 13px; color: var(--amber);
+            font-family: var(--sans);
+            transition: background 0.2s, color 0.2s;
+          ">Download bookmark</button>
+        </div>
+      `;
+
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+
+      const close = () => document.body.removeChild(overlay);
+
+      box.querySelector('#bmCancel').addEventListener('click', close);
+      box.querySelector('#bmConfirm').addEventListener('click', () => {
+        close();
+        onConfirm();
+      });
+      overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+
+      // Keyboard: Escape to cancel, Enter to confirm
+      const onKey = e => {
+        if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); }
+        if (e.key === 'Enter')  { close(); onConfirm(); document.removeEventListener('keydown', onKey); }
+      };
+      document.addEventListener('keydown', onKey);
+    }
 
     // ── Chapters ──
     function renderChapters() {
