@@ -131,13 +131,140 @@
       transition: width 0.1s linear;
     }
 
-    .progress-label {
+    /* ── Text Sidebar (desktop only) ── */
+    /*
+     * The sidebar sits on the LEFT edge of the viewport, outside the normal
+     * reading layout. It fades to near-invisible at rest and becomes readable
+     * on hover. On screens ≤ 768 px it is completely hidden — no DOM impact on
+     * mobile at all.
+     */
+    .text-sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 260px;
+      height: 100vh;
+      z-index: 50;
+      display: flex;
+      flex-direction: row;
+      pointer-events: none; /* let clicks fall through when faded */
+    }
+
+    /* The scrollable text pane */
+    .sidebar-pane {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 60px 16px 60px 14px;
+      opacity: 0.08;
+      transition: opacity 0.4s ease;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none;
+      pointer-events: auto;
+    }
+    .sidebar-pane::-webkit-scrollbar { display: none; }
+
+    /* Reveal tab — thin strip on the far left edge */
+    .sidebar-tab {
+      width: 18px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.18;
+      transition: opacity 0.3s;
+      cursor: pointer;
+      pointer-events: auto;
+      position: relative;
+    }
+
+    .sidebar-tab::before {
+      content: '';
       position: absolute;
-      right: 12px;
-      top: 4px;
-      font-size: 10px;
-      color: var(--dim);
-      letter-spacing: 0.05em;
+      left: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 2px;
+      height: 40px;
+      background: var(--dim);
+      border-radius: 1px;
+      transition: background 0.3s, height 0.3s;
+    }
+
+    /* Hover zone: hovering the whole sidebar area triggers the reveal */
+    .text-sidebar:hover .sidebar-pane {
+      opacity: 0.82;
+    }
+    .text-sidebar:hover .sidebar-tab {
+      opacity: 0.5;
+    }
+    .text-sidebar:hover .sidebar-tab::before {
+      background: var(--amber);
+      height: 56px;
+    }
+
+    /* Pinned state: sidebar stays fully visible */
+    .text-sidebar.pinned .sidebar-pane {
+      opacity: 0.88;
+    }
+    .text-sidebar.pinned .sidebar-tab {
+      opacity: 0.7;
+    }
+    .text-sidebar.pinned .sidebar-tab::before {
+      background: var(--amber);
+      height: 56px;
+    }
+
+    /* Sidebar text styling */
+    .sidebar-text {
+      font-family: var(--serif);
+      font-size: 11.5px;
+      line-height: 1.85;
+      color: var(--fg);
+      word-break: break-word;
+    }
+
+    /* Each word is a span so we can highlight and scroll-to */
+    .sidebar-text .sw {
+      display: inline;
+      border-radius: 2px;
+      transition: background 0.1s, color 0.1s;
+    }
+
+    /* Current word highlight */
+    .sidebar-text .sw.sw-active {
+      background: var(--amber);
+      color: var(--bg);
+      border-radius: 2px;
+      padding: 0 1px;
+    }
+
+    /* Subtle gradient masks at top/bottom of sidebar so text fades in */
+    .sidebar-pane::before,
+    .sidebar-pane::after {
+      content: '';
+      position: sticky;
+      display: block;
+      left: 0;
+      right: 0;
+      height: 48px;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .sidebar-pane::before {
+      top: 0;
+      background: linear-gradient(to bottom, var(--bg), transparent);
+      margin-bottom: -48px;
+    }
+    .sidebar-pane::after {
+      bottom: 0;
+      background: linear-gradient(to top, var(--bg), transparent);
+      margin-top: -48px;
+    }
+
+    /* Hide sidebar on mobile */
+    @media (max-width: 768px) {
+      .text-sidebar { display: none; }
     }
 
     /* ── Stage — the main reading area ── */
@@ -151,25 +278,6 @@
       user-select: none;
     }
 
-    /* ORP focal guide — subtle vertical tick marks */
-    .orp-guide {
-      position: absolute;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      pointer-events: none;
-    }
-
-    .orp-tick {
-      width: 1px;
-      height: 8px;
-      background: var(--amber);
-      opacity: 0.5;
-      border-radius: 1px;
-    }
-
-    /* Word display */
     .word-wrap {
       display: flex;
       align-items: baseline;
@@ -208,7 +316,6 @@
       letter-spacing: 0.01em;
     }
 
-    /* ORP ticks above and below the focal letter */
     .word-orp::before,
     .word-orp::after {
       content: '';
@@ -222,7 +329,6 @@
     .word-orp::before { top: -14px; height: 8px; }
     .word-orp::after  { bottom: -14px; height: 8px; }
 
-    /* Context line — shows surrounding words faintly */
     .context-line {
       font-family: var(--serif);
       font-size: clamp(12px, 1.8vw, 15px);
@@ -242,7 +348,6 @@
       font-style: normal;
     }
 
-    /* Paused indicator — sits above the word display, not overlapping */
     .pause-overlay {
       pointer-events: none;
       opacity: 0;
@@ -329,7 +434,6 @@
       flex-wrap: wrap;
     }
 
-    /* Play/pause button */
     .play-btn {
       width: 44px;
       height: 44px;
@@ -348,7 +452,6 @@
     .play-btn:hover { border-color: var(--amber); transform: scale(1.05); }
     .play-btn:active { transform: scale(0.95); }
 
-    /* Skip buttons */
     .skip-btn {
       background: none;
       border: none;
@@ -362,7 +465,6 @@
     }
     .skip-btn:hover { color: var(--fg); }
 
-    /* WPM control */
     .wpm-group {
       display: flex;
       align-items: center;
@@ -618,6 +720,15 @@
   </style>
 </head>
 <body>
+
+  <!-- ── Text Sidebar (desktop only) ── -->
+  <div class="text-sidebar" id="textSidebar">
+    <div class="sidebar-tab" id="sidebarTab" title="Click to pin/unpin sidebar"></div>
+    <div class="sidebar-pane" id="sidebarPane">
+      <div class="sidebar-text" id="sidebarText"></div>
+    </div>
+  </div>
+
   <div class="shell">
 
     <!-- Top bar -->
@@ -642,15 +753,12 @@
     <!-- Stage -->
     <div class="stage" id="stage">
 
-      <!-- No book loaded -->
       <div class="no-book" id="noBook">
         <div class="no-book-title">No book loaded.</div>
         <div class="no-book-sub">Go back to the library and select a book.</div>
         <a href="/tools/reader/" style="margin-top:8px; font-size:13px; color:var(--amber);">← Back to Library</a>
       </div>
 
-      <!-- Reading view -->
-      <!-- Pause indicator — above the word, never overlapping -->
       <div class="pause-overlay" id="pauseOverlay">
         <div class="pause-hint">Paused — Space to resume · ← → to navigate</div>
       </div>
@@ -664,7 +772,6 @@
         <div class="context-line" id="contextLine"></div>
       </div>
 
-      <!-- Finished -->
       <div class="done-msg" id="doneMsg">
         <div class="done-title">The end.</div>
         <div class="done-sub" id="doneSub"></div>
@@ -677,39 +784,29 @@
     <!-- Bottom controls -->
     <div class="controls" id="controls" style="display:none;">
       <div class="controls-row">
-        <!-- Back sentence -->
         <button class="skip-btn" id="prevSentenceBtn" title="Back a sentence (←)">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path d="M13 4L7 10l6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             <line x1="4" y1="4" x2="4" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         </button>
-
-        <!-- Back word -->
         <button class="skip-btn" id="prevWordBtn" title="Back a word">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path d="M12 4L6 10l6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </button>
-
-        <!-- Play/Pause -->
         <button class="play-btn" id="playBtn">▶</button>
-
-        <!-- Forward word -->
         <button class="skip-btn" id="nextWordBtn" title="Forward a word">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path d="M8 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </button>
-
-        <!-- Forward sentence -->
         <button class="skip-btn" id="nextSentenceBtn" title="Forward a sentence (→)">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path d="M7 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             <line x1="16" y1="4" x2="16" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         </button>
-
         <div class="wpm-group">
           <span class="wpm-label">Speed</span>
           <input type="range" class="wpm-slider" id="wpmSlider"
@@ -717,8 +814,6 @@
           <span class="wpm-value" id="wpmValue">300 wpm</span>
         </div>
       </div>
-
-      <!-- Keyboard hints -->
       <div class="kbd-hints">
         <span><kbd>Space</kbd> play / pause</span>
         <span><kbd>←</kbd> <kbd>→</kbd> word · hold to scroll</span>
@@ -750,40 +845,121 @@
     // ── State ──
     let words    = [];
     let chapters = [];
-    let pos      = 0;       // current word index
+    let pos      = 0;
     let playing  = false;
     let timer    = null;
     let wpm      = 300;
     let isDark   = true;
 
     // ── Elements ──
-    const bookTitleBar   = document.getElementById('bookTitleBar');
-    const bookAuthorBar  = document.getElementById('bookAuthorBar');
-    const progressFill   = document.getElementById('progressFill');
-    const noBook         = document.getElementById('noBook');
-    const readingView    = document.getElementById('readingView');
-    const wordBefore     = document.getElementById('wordBefore');
-    const wordOrp        = document.getElementById('wordOrp');
-    const wordAfter      = document.getElementById('wordAfter');
-    const contextLine    = document.getElementById('contextLine');
-    const doneMsg        = document.getElementById('doneMsg');
-    const doneSub        = document.getElementById('doneSub');
-    const restartBtn     = document.getElementById('restartBtn');
-    const pauseOverlay   = document.getElementById('pauseOverlay');
-    const controls       = document.getElementById('controls');
-    const playBtn        = document.getElementById('playBtn');
-    const wpmSlider      = document.getElementById('wpmSlider');
-    const wpmValue       = document.getElementById('wpmValue');
-    const chaptersBtn    = document.getElementById('chaptersBtn');
-    const chaptersPanel  = document.getElementById('chaptersPanel');
-    const chaptersBackdrop = document.getElementById('chaptersBackdrop');
-    const chaptersClose  = document.getElementById('chaptersClose');
-    const chaptersList   = document.getElementById('chaptersList');
-    const themeBtn       = document.getElementById('themeBtn');
-    const prevWordBtn    = document.getElementById('prevWordBtn');
-    const nextWordBtn    = document.getElementById('nextWordBtn');
+    const bookTitleBar    = document.getElementById('bookTitleBar');
+    const bookAuthorBar   = document.getElementById('bookAuthorBar');
+    const progressFill    = document.getElementById('progressFill');
+    const noBook          = document.getElementById('noBook');
+    const readingView     = document.getElementById('readingView');
+    const wordBefore      = document.getElementById('wordBefore');
+    const wordOrp         = document.getElementById('wordOrp');
+    const wordAfter       = document.getElementById('wordAfter');
+    const contextLine     = document.getElementById('contextLine');
+    const doneMsg         = document.getElementById('doneMsg');
+    const doneSub         = document.getElementById('doneSub');
+    const restartBtn      = document.getElementById('restartBtn');
+    const pauseOverlay    = document.getElementById('pauseOverlay');
+    const controls        = document.getElementById('controls');
+    const playBtn         = document.getElementById('playBtn');
+    const wpmSlider       = document.getElementById('wpmSlider');
+    const wpmValue        = document.getElementById('wpmValue');
+    const chaptersBtn     = document.getElementById('chaptersBtn');
+    const chaptersPanel   = document.getElementById('chaptersPanel');
+    const chaptersBackdrop= document.getElementById('chaptersBackdrop');
+    const chaptersClose   = document.getElementById('chaptersClose');
+    const chaptersList    = document.getElementById('chaptersList');
+    const themeBtn        = document.getElementById('themeBtn');
+    const prevWordBtn     = document.getElementById('prevWordBtn');
+    const nextWordBtn     = document.getElementById('nextWordBtn');
     const prevSentenceBtn = document.getElementById('prevSentenceBtn');
     const nextSentenceBtn = document.getElementById('nextSentenceBtn');
+
+    // ── Sidebar elements ──
+    const textSidebar = document.getElementById('textSidebar');
+    const sidebarPane = document.getElementById('sidebarPane');
+    const sidebarText = document.getElementById('sidebarText');
+    const sidebarTab  = document.getElementById('sidebarTab');
+
+    // ── Sidebar state ──
+    let sidebarPinned    = false;
+    let sidebarSpans     = [];   // one <span> per word
+    let sidebarScrollRAF = null; // rAF handle for smooth scroll
+
+    // ── Build sidebar text ──
+    // Renders every word as a <span> with data-index so we can highlight
+    // and scroll to the current position during playback.
+    // Only runs on desktop (sidebar is display:none on mobile via CSS,
+    // but we skip the build entirely on narrow viewports for performance).
+    function buildSidebar() {
+      if (window.innerWidth <= 768) return;
+      if (!words.length) return;
+
+      // Batch DOM work into a fragment
+      const frag = document.createDocumentFragment();
+      sidebarSpans = [];
+
+      for (let i = 0; i < words.length; i++) {
+        const span = document.createElement('span');
+        span.className = 'sw';
+        span.dataset.i = i;
+        span.textContent = words[i];
+        frag.appendChild(span);
+
+        // Word separator — simple space
+        const sep = document.createTextNode(' ');
+        frag.appendChild(sep);
+      }
+
+      sidebarText.innerHTML = '';
+      sidebarText.appendChild(frag);
+
+      // Cache the NodeList as an array for O(1) index access
+      sidebarSpans = Array.from(sidebarText.querySelectorAll('.sw'));
+    }
+
+    // ── Update sidebar highlight and scroll position ──
+    // Called every time pos changes. Uses rAF so it never blocks the
+    // playback tick even at high WPM.
+    function syncSidebar(newPos) {
+      if (!sidebarSpans.length) return;
+
+      // Remove previous highlight
+      const prev = sidebarText.querySelector('.sw-active');
+      if (prev) prev.classList.remove('sw-active');
+
+      const span = sidebarSpans[newPos];
+      if (!span) return;
+      span.classList.add('sw-active');
+
+      // Schedule smooth scroll — cancel any pending frame first
+      if (sidebarScrollRAF) cancelAnimationFrame(sidebarScrollRAF);
+      sidebarScrollRAF = requestAnimationFrame(() => {
+        // Scroll the active word to the vertical centre of the pane
+        const paneRect = sidebarPane.getBoundingClientRect();
+        const spanRect = span.getBoundingClientRect();
+        const target   = sidebarPane.scrollTop
+                       + (spanRect.top - paneRect.top)
+                       - (paneRect.height / 2)
+                       + (spanRect.height / 2);
+        sidebarPane.scrollTo({ top: target, behavior: 'smooth' });
+      });
+    }
+
+    // ── Pin / unpin sidebar on tab click ──
+    sidebarTab.addEventListener('click', () => {
+      sidebarPinned = !sidebarPinned;
+      textSidebar.classList.toggle('pinned', sidebarPinned);
+      sidebarTab.title = sidebarPinned ? 'Click to unpin sidebar' : 'Click to pin sidebar';
+    });
+
+    // ── Prevent sidebar scroll from bubbling when hovered ──
+    sidebarPane.addEventListener('wheel', e => e.stopPropagation(), { passive: true });
 
     // ── Init ──
     if (book) {
@@ -791,13 +967,13 @@
       chapters = book.chapters;
       bookTitleBar.textContent  = book.title;
       bookAuthorBar.textContent = book.author;
-      // Resume from bookmark if provided
       if (book.resumeAt && book.resumeAt > 0 && book.resumeAt < words.length) {
         pos = book.resumeAt;
       }
       noBook.classList.remove('visible');
       readingView.style.display = 'flex';
       controls.style.display    = 'block';
+      buildSidebar();
       renderChapters();
       showWord();
     } else {
@@ -805,8 +981,6 @@
     }
 
     // ── ORP calculation ──
-    // The optimal recognition point is roughly 30% into the word,
-    // biased left for short words and right for longer ones.
     function getOrpIndex(word) {
       const len = word.length;
       if (len <= 1)  return 0;
@@ -829,7 +1003,6 @@
       wordOrp.textContent    = word.charAt(orpI) || '';
       wordAfter.textContent  = word.substring(orpI + 1);
 
-      // Context: 4 words before and after
       const ctx = words.slice(Math.max(0, pos-4), pos+5);
       const ctxHtml = ctx.map((w, i) => {
         const globalIdx = Math.max(0, pos-4) + i;
@@ -839,14 +1012,12 @@
       }).join(' ');
       contextLine.innerHTML = ctxHtml;
 
-      // Progress
       const pct = words.length > 1 ? (pos / (words.length - 1)) * 100 : 0;
       progressFill.style.width = pct + '%';
 
-      // Highlight active chapter
       highlightCurrentChapter();
+      syncSidebar(pos);
 
-      // Extra pause for punctuation (end of sentence feels natural)
       return endsWithPunctuation(raw);
     }
 
@@ -856,9 +1027,8 @@
 
     // ── Playback ──
     function getDelay(isPunct) {
-      const base = 60000 / wpm;
-      // Slow slightly on long words, pause longer on sentence ends
-      const word = words[pos] || '';
+      const base  = 60000 / wpm;
+      const word  = words[pos] || '';
       const extra = word.length > 8 ? base * 0.15 : 0;
       const punct = isPunct ? base * 0.6 : 0;
       return base + extra + punct;
@@ -901,7 +1071,6 @@
       pause();
       readingView.style.display = 'none';
       doneMsg.classList.add('visible');
-      const mins = Math.round(words.length / wpm);
       doneSub.textContent = `${words.length.toLocaleString()} words at ${wpm} wpm.`;
     }
 
@@ -928,7 +1097,6 @@
 
     function prevSentence() {
       pause();
-      // Walk back to find previous sentence boundary
       let i = pos - 2;
       while (i > 0 && !endsWithPunctuation(words[i])) i--;
       pos = Math.max(0, i + 1);
@@ -968,8 +1136,6 @@
       const pct  = Math.round((pos / Math.max(1, words.length - 1)) * 100);
       const slug = book.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g,'');
       const filename = slug + '.rsvp';
-
-      // Show confirmation dialog before downloading
       showBookmarkDialog(pct, filename, () => {
         const bm = {
           title:     book.title,
@@ -991,11 +1157,9 @@
       });
     });
 
-    // ── Bookmark dialog ──
     function showBookmarkDialog(pct, filename, onConfirm) {
       const overlay = document.createElement('div');
       overlay.className = 'bm-overlay';
-
       const box = document.createElement('div');
       box.className = 'bm-box';
       box.innerHTML = `
@@ -1014,19 +1178,12 @@
           <button class="bm-confirm">Download bookmark</button>
         </div>
       `;
-
       overlay.appendChild(box);
       document.body.appendChild(overlay);
-
       const close = () => document.body.removeChild(overlay);
-
       box.querySelector('.bm-cancel').addEventListener('click', close);
-      box.querySelector('.bm-confirm').addEventListener('click', () => {
-        close();
-        onConfirm();
-      });
+      box.querySelector('.bm-confirm').addEventListener('click', () => { close(); onConfirm(); });
       overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
-
       const onKey = e => {
         if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); }
         if (e.key === 'Enter')  { close(); onConfirm(); document.removeEventListener('keydown', onKey); }
@@ -1053,7 +1210,6 @@
           showWord();
           closeChapters();
           if (playing) { clearTimeout(timer); timer = setTimeout(tick, getDelay(false)); }
-          // Briefly reveal the topbar so the updated progress bar is visible
           flashTopbar();
         });
         chaptersList.appendChild(item);
@@ -1082,23 +1238,18 @@
     chaptersClose.addEventListener('click', closeChapters);
     chaptersBackdrop.addEventListener('click', closeChapters);
 
-    // ── Keyboard shortcuts ──
-    // ── Hold-to-scroll state ──
-    // Holding ← or → while paused auto-scrolls at increasing speed up to 500 wpm.
-    // Speed ramps up the longer the key is held: starts at 120 wpm, accelerates
-    // to 500 wpm over ~2 seconds, then stays there until key is released.
+    // ── Hold-to-scroll ──
     const HOLD_MAX_WPM   = 500;
     const HOLD_START_WPM = 120;
-    const HOLD_RAMP_MS   = 2000; // time to reach max speed
+    const HOLD_RAMP_MS   = 2000;
 
-    let holdKey       = null;   // 'ArrowLeft' | 'ArrowRight' | null
+    let holdKey       = null;
     let holdStartTime = null;
     let holdTimer     = null;
 
     function holdScrollDelay() {
       const elapsed = Date.now() - holdStartTime;
-      const t       = Math.min(elapsed / HOLD_RAMP_MS, 1); // 0→1 over ramp period
-      // Ease in: starts slow, accelerates
+      const t       = Math.min(elapsed / HOLD_RAMP_MS, 1);
       const eased   = t * t;
       const hwpm    = HOLD_START_WPM + eased * (HOLD_MAX_WPM - HOLD_START_WPM);
       return 60000 / hwpm;
@@ -1116,11 +1267,10 @@
     }
 
     function startHold(key) {
-      if (holdKey === key) return; // already holding
+      if (holdKey === key) return;
       stopHold();
       holdKey       = key;
       holdStartTime = Date.now();
-      // Small initial delay before auto-scroll kicks in (feels more intentional)
       holdTimer = setTimeout(holdScrollStep, 350);
     }
 
@@ -1168,10 +1318,8 @@
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') stopHold();
     });
 
-    // Also stop hold if window loses focus
     window.addEventListener('blur', stopHold);
 
-    // Briefly force topbar and controls to full opacity so progress update is visible
     function flashTopbar() {
       const topbar   = document.querySelector('.topbar');
       const progress = document.querySelector('.progress-track');
