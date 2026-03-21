@@ -414,7 +414,6 @@
 
   <script>
     // ── Session library (in-memory only) ──
-    // Books stored as { id, title, author, format, wordCount, words, chapters }
     const library = [];
 
     const bookGrid   = document.getElementById('bookGrid');
@@ -435,7 +434,7 @@
       uploadZone.classList.remove('dragover');
       [...e.dataTransfer.files].forEach(handleFile);
     });
-    // Dedicated bookmark input (nudge)
+
     const bookmarkInput = document.getElementById('bookmarkInput');
     const nudgeStatus   = document.getElementById('nudgeStatus');
     bookmarkInput.addEventListener('change', async () => {
@@ -480,7 +479,6 @@
       const buf = await file.arrayBuffer();
       const zip = await JSZip.loadAsync(buf);
 
-      // Find the OPF file via container.xml
       const containerXml = await zip.file('META-INF/container.xml')?.async('text');
       if (!containerXml) throw new Error('Invalid EPUB: no container.xml');
 
@@ -491,13 +489,11 @@
       const opfXml  = await zip.file(opfPath)?.async('text');
       if (!opfXml) throw new Error('Invalid EPUB: could not read OPF');
 
-      // Extract title and author from OPF metadata
       const title  = opfXml.match(/<dc:title[^>]*>([^<]+)<\/dc:title>/i)?.[1]?.trim()
                   || file.name.replace('.epub','');
       const author = opfXml.match(/<dc:creator[^>]*>([^<]+)<\/dc:creator>/i)?.[1]?.trim()
                   || 'Unknown';
 
-      // Get spine item order
       const manifestItems = {};
       const manifestRe = /<item[^>]+id="([^"]+)"[^>]+href="([^"]+)"[^>]*\/>/gi;
       let m;
@@ -508,12 +504,10 @@
       const spineIds = [...opfXml.matchAll(/<itemref[^>]+idref="([^"]+)"/gi)].map(x => x[1]);
       const hrefs    = spineIds.map(id => manifestItems[id]).filter(Boolean);
 
-      // Read and concatenate spine documents
       let fullText = '';
       for (const href of hrefs) {
         const path = opfDir + href.split('#')[0];
         const html = await zip.file(path)?.async('text') ?? '';
-        // Strip tags, decode entities
         fullText += ' ' + html
           .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
           .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
@@ -528,9 +522,8 @@
       setStatus('');
     }
 
-    // ── Metadata extraction (for txt/pdf where we have to guess) ──
+    // ── Metadata extraction ──
     function extractMeta(filename, text) {
-      // Project Gutenberg txt files have "Title:" and "Author:" near the top
       const sample = text.substring(0, 3000);
       const title  = sample.match(/^Title:\s*(.+)$/im)?.[1]?.trim()
                   || filename.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
@@ -540,36 +533,60 @@
 
     // ── Text processing — split into words and detect chapters ──
     function processText(text) {
-      // Normalize whitespace
       const clean = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+      const lines  = clean.split('\n');
 
-      // Detect chapters: lines that look like "Chapter 1", "CHAPTER I", "Part Two", etc.
-      const chapters = [];
-      const lines    = clean.split('\n');
-      let wordIndex  = 0;
-      const wordList = [];
+      // ── Chapter detection ──
+      // Strategy: scan every line for chapter-like patterns, recording the word
+      // index at which each candidate line occurs. Then deduplicate by title so
+      // that a Table of Contents entry and its matching body heading only keep the
+      // LAST occurrence (which is always the real chapter, not the TOC reference).
+      // Finally, enforce a minimum word gap so two adjacent matches don't both survive.
 
-      const chapterRe = /^\s*(chapter|part|book|section|prologue|epilogue|preface|introduction)\b.{0,60}$/i;
-      const allCapsRe = /^\s*[A-Z][A-Z\s\d.,\-:]{4,60}\s*$/;
+      const chapterRe = /^\s*(chapter|part|book|section|prologue|epilogue|preface|introduction|conclusion)\b.{0,80}$/i;
+      const allCapsRe = /^\s*[A-Z][A-Z\s\d.,\-:']{4,60}\s*$/;
+      const MIN_GAP   = 200; // words — ignore chapter markers closer than this
+
+      const wordList    = [];
+      const candidates  = []; // { title, wordIndex }
 
       for (const line of lines) {
-        const lineWords = line.trim().split(/\s+/).filter(w => w.length > 0);
+        const trimmed   = line.trim();
+        const lineWords = trimmed.split(/\s+/).filter(w => w.length > 0);
         if (lineWords.length === 0) continue;
 
-        // Check for chapter heading
-        if (chapterRe.test(line) || (allCapsRe.test(line) && lineWords.length <= 8)) {
-          chapters.push({ title: line.trim(), wordIndex });
+        const isChapterLine = chapterRe.test(line) ||
+          (allCapsRe.test(line) && lineWords.length <= 8);
+
+        if (isChapterLine) {
+          candidates.push({ title: trimmed, wordIndex: wordList.length });
         }
 
         wordList.push(...lineWords);
-        wordIndex += lineWords.length;
       }
 
-      // If no chapters found, create synthetic chunks every ~3000 words
+      // Deduplicate: for each unique normalised title, keep only the last occurrence.
+      // This removes TOC entries, which always appear before the real chapter text.
+      const normalise = t => t.toLowerCase().replace(/\s+/g, ' ').replace(/[^a-z0-9 ]/g, '').trim();
+      const byTitle   = new Map();
+      for (const c of candidates) {
+        byTitle.set(normalise(c.title), c); // later entry overwrites earlier
+      }
+
+      // Sort survivors by wordIndex and enforce minimum gap between chapters.
+      const sorted = [...byTitle.values()].sort((a, b) => a.wordIndex - b.wordIndex);
+      const chapters = [];
+      for (const ch of sorted) {
+        const prev = chapters[chapters.length - 1];
+        if (prev && ch.wordIndex - prev.wordIndex < MIN_GAP) continue;
+        chapters.push(ch);
+      }
+
+      // Fallback: synthetic sections if nothing detected
       if (chapters.length === 0) {
         for (let i = 0; i < wordList.length; i += 3000) {
           chapters.push({
-            title: `Section ${Math.floor(i/3000) + 1}`,
+            title: `Section ${Math.floor(i / 3000) + 1}`,
             wordIndex: i,
           });
         }
@@ -578,10 +595,9 @@
       return { words: wordList, chapters };
     }
 
-    // ── Pending bookmark (loaded before or after book) ──
+    // ── Pending bookmark ──
     let pendingBookmark = null;
 
-    // ── Bookmark loader ──
     async function loadBookmark(file) {
       try {
         const text = await file.text();
@@ -594,14 +610,12 @@
       }
     }
 
-    // ── Add book to session library ──
     function addBook(book) {
       book.id = Date.now() + Math.random();
       library.push(book);
       renderLibrary();
     }
 
-    // ── Render library grid ──
     function renderLibrary() {
       const n = library.length;
       countEl.textContent = n + (n === 1 ? ' book' : ' books');
@@ -637,13 +651,11 @@
           <button class="book-remove" title="Remove" data-id="${book.id}">✕</button>
         `;
 
-        // Open reader
         card.addEventListener('click', e => {
           if (e.target.closest('.book-remove')) return;
           openReader(book);
         });
 
-        // Remove book
         card.querySelector('.book-remove').addEventListener('click', e => {
           e.stopPropagation();
           const idx = library.findIndex(b => b.id === book.id);
@@ -655,10 +667,8 @@
       }
     }
 
-    // ── Open reader — pass book via sessionStorage ──
     function openReader(book) {
       try {
-        // Check if pending bookmark matches this book
         let resumeAt = 0;
         if (pendingBookmark) {
           if (pendingBookmark.title.trim().toLowerCase() === book.title.trim().toLowerCase()
