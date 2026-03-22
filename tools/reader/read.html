@@ -56,7 +56,7 @@
       align-items: center;
       justify-content: space-between;
       padding: 12px 20px;
-      opacity: 0.4;
+      opacity: 0.7;
       transition: opacity 0.3s;
       gap: 12px;
     }
@@ -420,7 +420,7 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
-      opacity: 0.35;
+      opacity: 0.6;
       transition: opacity 0.3s;
     }
 
@@ -888,65 +888,76 @@
 
     // ── Sidebar state ──
     let sidebarPinned    = false;
-    let sidebarSpans     = [];   // one <span> per word
-    let sidebarScrollRAF = null; // rAF handle for smooth scroll
+    let sidebarScrollRAF = null;
+    // charOffsets[i] = character index in the full joined string where word i starts.
+    // Lets us highlight without keeping hundreds of thousands of spans in the DOM.
+    let charOffsets      = [];
 
     // ── Build sidebar text ──
-    // Renders every word as a <span> with data-index so we can highlight
-    // and scroll to the current position during playback.
-    // Only runs on desktop (sidebar is display:none on mobile via CSS,
-    // but we skip the build entirely on narrow viewports for performance).
+    // Renders the entire book as ONE plain text node plus a single reusable <mark>.
+    // DOM node count stays ~2 regardless of book length, so theme toggles and
+    // repaints stay fast even for Moby Dick-sized texts.
     function buildSidebar() {
       if (window.innerWidth <= 768) return;
       if (!words.length) return;
 
-      // Batch DOM work into a fragment
-      const frag = document.createDocumentFragment();
-      sidebarSpans = [];
-
+      let fullText = '';
+      charOffsets  = [];
       for (let i = 0; i < words.length; i++) {
-        const span = document.createElement('span');
-        span.className = 'sw';
-        span.dataset.i = i;
-        span.textContent = words[i];
-        frag.appendChild(span);
-
-        // Word separator — simple space
-        const sep = document.createTextNode(' ');
-        frag.appendChild(sep);
+        charOffsets.push(fullText.length);
+        fullText += words[i];
+        if (i < words.length - 1) fullText += ' ';
       }
 
-      sidebarText.innerHTML = '';
-      sidebarText.appendChild(frag);
+      // Single text node — no per-word spans
+      sidebarText.textContent = fullText;
 
-      // Cache the NodeList as an array for O(1) index access
-      sidebarSpans = Array.from(sidebarText.querySelectorAll('.sw'));
+      // One <mark> we reuse for the moving highlight
+      const mark = document.createElement('mark');
+      mark.id = 'sidebarMark';
+      mark.style.cssText = [
+        'background:var(--amber)',
+        'color:var(--bg)',
+        'border-radius:2px',
+        'padding:0 1px',
+        'font-family:inherit',
+        'font-size:inherit',
+        'line-height:inherit',
+      ].join(';');
+      sidebarText.appendChild(mark);
     }
 
-    // ── Update sidebar highlight and scroll position ──
-    // Called every time pos changes. Uses rAF so it never blocks the
-    // playback tick even at high WPM.
+    // ── Update sidebar highlight and scroll ──
+    // Uses a Range to locate word[newPos] in the text node, then moves
+    // the single <mark> to surround just that word. One rAF per tick.
     function syncSidebar(newPos) {
-      if (!sidebarSpans.length) return;
+      if (!charOffsets.length) return;
 
-      // Remove previous highlight
-      const prev = sidebarText.querySelector('.sw-active');
-      if (prev) prev.classList.remove('sw-active');
-
-      const span = sidebarSpans[newPos];
-      if (!span) return;
-      span.classList.add('sw-active');
-
-      // Schedule smooth scroll — cancel any pending frame first
       if (sidebarScrollRAF) cancelAnimationFrame(sidebarScrollRAF);
       sidebarScrollRAF = requestAnimationFrame(() => {
-        // Scroll the active word to the vertical centre of the pane
+        const mark     = document.getElementById('sidebarMark');
+        const textNode = sidebarText.firstChild; // the plain text node
+        if (!mark || !textNode) return;
+
+        const start = charOffsets[newPos];
+        const word  = words[newPos];
+        if (start === undefined || !word) return;
+        const end = start + word.length;
+        if (end > textNode.length) return;
+
+        // surroundContents moves the mark around the new word automatically
+        const range = document.createRange();
+        range.setStart(textNode, start);
+        range.setEnd(textNode, end);
+        range.surroundContents(mark);
+
+        // Scroll so the highlighted word sits at the vertical centre of the pane
         const paneRect = sidebarPane.getBoundingClientRect();
-        const spanRect = span.getBoundingClientRect();
+        const markRect = mark.getBoundingClientRect();
         const target   = sidebarPane.scrollTop
-                       + (spanRect.top - paneRect.top)
+                       + (markRect.top  - paneRect.top)
                        - (paneRect.height / 2)
-                       + (spanRect.height / 2);
+                       + (markRect.height / 2);
         sidebarPane.scrollTo({ top: target, behavior: 'smooth' });
       });
     }
