@@ -79,7 +79,7 @@
 
     .book-author-bar {
       font-size: 11px;
-      color: var(--dim);
+      color: var(--fg);
       font-style: italic;
       font-family: var(--serif);
     }
@@ -98,7 +98,7 @@
       padding: 5px 8px;
       cursor: pointer;
       font-size: 13px;
-      color: var(--dim);
+      color: var(--fg);
       transition: color 0.2s, border-color 0.2s;
       white-space: nowrap;
     }
@@ -107,7 +107,7 @@
     .back-link {
       text-decoration: none;
       font-size: 12px;
-      color: var(--dim);
+      color: var(--fg);
       transition: color 0.2s;
     }
     .back-link:hover { color: var(--amber); }
@@ -885,31 +885,34 @@
     // ── Sidebar state ──
     let sidebarPinned    = false;
     let sidebarScrollRAF = null;
-    // charOffsets[i] = character index in the full joined string where word i starts.
-    // Lets us highlight without keeping hundreds of thousands of spans in the DOM.
+    // The full book text as a single joined string, built once.
+    let sidebarFullText  = '';
+    // charOffsets[i] = index in sidebarFullText where word i starts.
     let charOffsets      = [];
 
     // ── Build sidebar text ──
-    // Renders the entire book as ONE plain text node plus a single reusable <mark>.
-    // DOM node count stays ~2 regardless of book length, so theme toggles and
-    // repaints stay fast even for Moby Dick-sized texts.
+    // Uses exactly three persistent child nodes inside sidebarText:
+    //   [0] text node  — everything before the highlighted word
+    //   [1] <mark>     — the highlighted word itself
+    //   [2] text node  — everything after the highlighted word
+    // Updating the highlight is just three textContent assignments — no DOM
+    // restructuring, no span proliferation, no layout thrash.
     function buildSidebar() {
       if (window.innerWidth <= 768) return;
       if (!words.length) return;
 
-      let fullText = '';
-      charOffsets  = [];
+      sidebarFullText = '';
+      charOffsets     = [];
       for (let i = 0; i < words.length; i++) {
-        charOffsets.push(fullText.length);
-        fullText += words[i];
-        if (i < words.length - 1) fullText += ' ';
+        charOffsets.push(sidebarFullText.length);
+        sidebarFullText += words[i];
+        if (i < words.length - 1) sidebarFullText += ' ';
       }
 
-      // Single text node — no per-word spans
-      sidebarText.textContent = fullText;
+      sidebarText.innerHTML = '';
 
-      // One <mark> we reuse for the moving highlight
-      const mark = document.createElement('mark');
+      const before = document.createTextNode('');
+      const mark   = document.createElement('mark');
       mark.id = 'sidebarMark';
       mark.style.cssText = [
         'background:var(--amber)',
@@ -920,32 +923,32 @@
         'font-size:inherit',
         'line-height:inherit',
       ].join(';');
+      const after  = document.createTextNode('');
+
+      sidebarText.appendChild(before);
       sidebarText.appendChild(mark);
+      sidebarText.appendChild(after);
     }
 
     // ── Update sidebar highlight and scroll ──
-    // Uses a Range to locate word[newPos] in the text node, then moves
-    // the single <mark> to surround just that word. One rAF per tick.
+    // Simply slices sidebarFullText into before/word/after and assigns to the
+    // three persistent nodes. No DOM restructuring ever happens.
     function syncSidebar(newPos) {
       if (!charOffsets.length) return;
 
       if (sidebarScrollRAF) cancelAnimationFrame(sidebarScrollRAF);
       sidebarScrollRAF = requestAnimationFrame(() => {
-        const mark     = document.getElementById('sidebarMark');
-        const textNode = sidebarText.firstChild; // the plain text node
-        if (!mark || !textNode) return;
+        const mark  = document.getElementById('sidebarMark');
+        if (!mark || !sidebarText.firstChild) return;
 
         const start = charOffsets[newPos];
         const word  = words[newPos];
         if (start === undefined || !word) return;
         const end = start + word.length;
-        if (end > textNode.length) return;
 
-        // surroundContents moves the mark around the new word automatically
-        const range = document.createRange();
-        range.setStart(textNode, start);
-        range.setEnd(textNode, end);
-        range.surroundContents(mark);
+        sidebarText.firstChild.textContent      = sidebarFullText.slice(0, start);
+        mark.textContent                         = sidebarFullText.slice(start, end);
+        sidebarText.lastChild.textContent        = sidebarFullText.slice(end);
 
         // Scroll so the highlighted word sits at the vertical centre of the pane
         const paneRect = sidebarPane.getBoundingClientRect();
