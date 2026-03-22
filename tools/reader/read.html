@@ -1121,6 +1121,12 @@
     wpmSlider.addEventListener('input', () => {
       wpm = parseInt(wpmSlider.value);
       wpmValue.textContent = wpm + ' wpm';
+      // Reschedule the active tick immediately so the new speed takes effect
+      // without waiting for the already-queued setTimeout to expire.
+      if (playing) {
+        clearTimeout(timer);
+        timer = setTimeout(tick, getDelay(false));
+      }
     });
 
     // ── Theme toggle ──
@@ -1305,11 +1311,13 @@
           wpm = Math.min(500, wpm + 25);
           wpmSlider.value = wpm;
           wpmValue.textContent = wpm + ' wpm';
+          if (playing) { clearTimeout(timer); timer = setTimeout(tick, getDelay(false)); }
           break;
         case 'ArrowDown':
           wpm = Math.max(100, wpm - 25);
           wpmSlider.value = wpm;
           wpmValue.textContent = wpm + ' wpm';
+          if (playing) { clearTimeout(timer); timer = setTimeout(tick, getDelay(false)); }
           break;
       }
     });
