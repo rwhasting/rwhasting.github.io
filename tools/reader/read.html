@@ -1029,8 +1029,10 @@
     function getDelay(isPunct) {
       const base  = 60000 / wpm;
       const word  = words[pos] || '';
-      const extra = word.length > 8 ? base * 0.15 : 0;
-      const punct = isPunct ? base * 0.6 : 0;
+      // Fixed-ms bonuses so they don't compress the speed range at high WPM.
+      // Long words get a flat 30ms extra; sentence-ending punctuation gets 80ms.
+      const extra = word.length > 8 ? 30 : 0;
+      const punct = isPunct ? 80 : 0;
       return base + extra + punct;
     }
 
