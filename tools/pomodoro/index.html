@@ -175,14 +175,6 @@
     white-space: nowrap;
   }
 
-  .clock.tick { animation: clockTick 0.07s ease-out; }
-
-  @keyframes clockTick {
-    0%   { opacity: 1; }
-    50%  { opacity: 0.55; }
-    100% { opacity: 1; }
-  }
-
   /* ── Session dots ── */
   .sessionRow {
     display: flex;
@@ -406,9 +398,9 @@
 
     <!-- Mode tabs -->
     <div class="tabs" role="tablist" aria-label="Timer mode">
-      <button class="tab active" data-mode="pomodoro" role="tab" aria-selected="true">Pomodoro</button>
-      <button class="tab" data-mode="short"    role="tab" aria-selected="false">Short Break</button>
-      <button class="tab" data-mode="long"     role="tab" aria-selected="false">Long Break</button>
+      <button class="tab active" data-mode="pomodoro" role="tab" aria-selected="true">Pomodoro<span class="kbdHint"> (1)</span></button>
+      <button class="tab" data-mode="short"    role="tab" aria-selected="false">Short Break<span class="kbdHint"> (2)</span></button>
+      <button class="tab" data-mode="long"     role="tab" aria-selected="false">Long Break<span class="kbdHint"> (3)</span></button>
     </div>
 
     <!-- Clock card -->
@@ -479,13 +471,13 @@
       <p>The <strong>Pomodoro Technique</strong> is a simple way to work without turning into a puddle. The idea: focus hard for 25 minutes, then take a short break. Repeat four times, then take a longer break. That's one full cycle.</p>
       <p>The name comes from a tomato-shaped kitchen timer. Yes, really. No, it doesn't matter.</p>
       <p><strong>How to use this one:</strong> Hit Start, do your thing, and when the timer ends it'll ask if you want a short or long break. The dots below the clock track how many sessions you've done in the current cycle.</p>
-      <p><strong>Keyboard shortcuts:</strong> Space to start/pause · R to reset · S for settings · D to toggle light/dark · 1/2/3 to switch modes.</p>
+      <p><strong>Keyboard shortcuts:</strong> Space to start/pause · R to reset · S for settings · D to toggle light/dark · 1 for Pomodoro · 2 for Short Break · 3 for Long Break.</p>
     </div>
 
     <button class="explainerToggle" id="explainerToggle" aria-expanded="false">What's this?</button>
 
     <div class="hint">
-      <span class="kbdHint">Space to start/pause · R to reset · S for settings · D to toggle light/dark.<br/></span>
+      <span class="kbdHint">Space to start/pause · R to reset · S for settings · D to toggle light/dark · 1/2/3 to switch modes.<br/></span>
       Work runs in your browser. Nothing is tracked.<br/>
       You are doing great. Probably.
     </div>
@@ -683,9 +675,6 @@
         setStatus('');
         ticker = setInterval(() => {
           remaining = Math.max(0, remaining - 1);
-          clockEl.classList.remove('tick');
-          void clockEl.offsetWidth;
-          clockEl.classList.add('tick');
           render();
           if (remaining === 0) onComplete();
         }, 1000);
@@ -735,15 +724,18 @@
 
     // ── Keyboard ──
     document.addEventListener('keydown', e => {
-      if (e.target.tagName === 'INPUT') return;
+      const tag = e.target.tagName;
       const k = e.key.toLowerCase();
+      // Always allow mode switching and theme, even if a button has focus
+      if (k === '1') { e.target.blur(); switchMode('pomodoro'); return; }
+      if (k === '2') { e.target.blur(); switchMode('short');    return; }
+      if (k === '3') { e.target.blur(); switchMode('long');     return; }
+      if (k === 'd') { dark = !dark; applyTheme(); return; }
+      // Skip remaining shortcuts if an input is focused
+      if (tag === 'INPUT') return;
       if (k === ' ' || k === 'spacebar') { e.preventDefault(); startStop(); }
       if (k === 'r') reset();
       if (k === 's') document.getElementById('toggleSettings').click();
-      if (k === 'd') { dark = !dark; applyTheme(); }
-      if (k === '1') switchMode('pomodoro');
-      if (k === '2') switchMode('short');
-      if (k === '3') switchMode('long');
     });
 
     document.getElementById('startStop').addEventListener('click', startStop);
